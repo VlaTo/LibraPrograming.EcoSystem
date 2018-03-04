@@ -9,7 +9,7 @@
     <AppDesignerFolder>Properties</AppDesignerFolder>
     <RootNamespace>LibraProgramming.Windows.EcoSystem</RootNamespace>
     <AssemblyName>LibraProgramming.Windows.EcoSystem</AssemblyName>
-    <DefaultLanguage>ru-RU</DefaultLanguage>
+    <DefaultLanguage>en-US</DefaultLanguage>
     <TargetPlatformIdentifier>UAP</TargetPlatformIdentifier>
     <TargetPlatformVersion Condition=" '$(TargetPlatformVersion)' == '' ">10.0.16299.0</TargetPlatformVersion>
     <TargetPlatformMinVersion>10.0.15063.0</TargetPlatformMinVersion>
@@ -95,7 +95,64 @@
     <Compile Include="App.xaml.cs">
       <DependentUpon>App.xaml</DependentUpon>
     </Compile>
-    <Compile Include="MainPage.xaml.cs">
+    <Compile Include="Core\ApplicationNavigator.cs" />
+    <Compile Include="Core\FrameNavigationProvider.cs" />
+    <Compile Include="Core\IApplicationNavigator.cs" />
+    <Compile Include="Core\INavigationProvider.cs" />
+    <Compile Include="Core\ServiceContainer\CreatorFactory.cs" />
+    <Compile Include="Core\ServiceContainer\Factory.cs" />
+    <Compile Include="Core\ServiceContainer\IInstanceProvider.cs" />
+    <Compile Include="Core\ServiceContainer\InstanceLifetime.CreateNewLifetime.cs" />
+    <Compile Include="Core\ServiceContainer\InstanceLifetime.cs" />
+    <Compile Include="Core\ServiceContainer\InstanceLifetime.SingletonLifetime.cs" />
+    <Compile Include="Core\ServiceContainer\IServiceLocator.cs" />
+    <Compile Include="Core\ServiceContainer\IServiceRegistry.cs" />
+    <Compile Include="Core\ServiceContainer\PrefferedConstructorAttribute.cs" />
+    <Compile Include="Core\ServiceContainer\ServiceAttribute.cs" />
+    <Compile Include="Core\ServiceContainer\ServiceLocator.cs" />
+    <Compile Include="Core\ServiceContainer\ServiceLocator.InstanceCollection.cs" />
+    <Compile Include="Core\ServiceContainer\ServiceLocatorException.cs" />
+    <Compile Include="Core\ServiceContainer\ServiceTypeReference.cs" />
+    <Compile Include="Core\ServiceContainer\Throw.cs" />
+    <Compile Include="Core\ServiceContainer\TypeFactory.cs" />
+    <Compile Include="Core\WeakDelegate.cs" />
+    <Compile Include="Core\WeakDelegateBase.cs" />
+    <Compile Include="Core\WeakEvent.cs" />
+    <Compile Include="Core\WeakEventHandler.cs" />
+    <Compile Include="GameEngine\Enemy.cs" />
+    <Compile Include="GameEngine\EnemyWaveEmitter.cs" />
+    <Compile Include="GameEngine\EnemyWaveFactory.cs" />
+    <Compile Include="GameEngine\FastMovementEnemy.cs" />
+    <Compile Include="GameEngine\Game.cs" />
+    <Compile Include="GameEngine\GameplayController.cs" />
+    <Compile Include="GameEngine\ICoordinatesSystem.cs" />
+    <Compile Include="GameEngine\IEnemyProvider.cs" />
+    <Compile Include="GameEngine\IGameState.cs" />
+    <Compile Include="GameEngine\IPathFinder.cs" />
+    <Compile Include="GameEngine\IScene.cs" />
+    <Compile Include="GameEngine\ISceneNode.cs" />
+    <Compile Include="GameEngine\ISceneNodeState.cs" />
+    <Compile Include="GameEngine\LandscapeMap.cs" />
+    <Compile Include="GameEngine\LaserBeam.cs" />
+    <Compile Include="GameEngine\LaserTower.cs" />
+    <Compile Include="GameEngine\MapBackground.cs" />
+    <Compile Include="GameEngine\MapSize.cs" />
+    <Compile Include="GameEngine\MyHomeBase.cs" />
+    <Compile Include="GameEngine\MyHomeBaseHealthIndicator.cs" />
+    <Compile Include="GameEngine\NodeState.cs" />
+    <Compile Include="GameEngine\Position.cs" />
+    <Compile Include="GameEngine\Scene.cs" />
+    <Compile Include="GameEngine\SceneNode.Collection.cs" />
+    <Compile Include="GameEngine\SceneNode.cs" />
+    <Compile Include="GameEngine\SceneNodeState.cs" />
+    <Compile Include="GameEngine\Seeker.cs" />
+    <Compile Include="GameEngine\StateAwareSceneNode.cs" />
+    <Compile Include="GameEngine\UserPointer.cs" />
+    <Compile Include="GameEngine\WayPath.cs" />
+    <Compile Include="Views\HostPage.xaml.cs">
+      <DependentUpon>HostPage.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\MainPage.xaml.cs">
       <DependentUpon>MainPage.xaml</DependentUpon>
     </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -107,13 +164,52 @@
     <None Include="LibraProgramming.Windows.EcoSystem_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="Assets\LargeTile.scale-100.png" />
+    <Content Include="Assets\LargeTile.scale-125.png" />
+    <Content Include="Assets\LargeTile.scale-150.png" />
+    <Content Include="Assets\LargeTile.scale-200.png" />
+    <Content Include="Assets\LargeTile.scale-400.png" />
+    <Content Include="Assets\SmallTile.scale-100.png" />
+    <Content Include="Assets\SmallTile.scale-125.png" />
+    <Content Include="Assets\SmallTile.scale-150.png" />
+    <Content Include="Assets\SmallTile.scale-200.png" />
+    <Content Include="Assets\SmallTile.scale-400.png" />
+    <Content Include="Assets\SplashScreen.scale-100.png" />
+    <Content Include="Assets\SplashScreen.scale-125.png" />
+    <Content Include="Assets\SplashScreen.scale-150.png" />
+    <Content Include="Assets\SplashScreen.scale-400.png" />
+    <Content Include="Assets\Square150x150Logo.scale-100.png" />
+    <Content Include="Assets\Square150x150Logo.scale-125.png" />
+    <Content Include="Assets\Square150x150Logo.scale-150.png" />
+    <Content Include="Assets\Square150x150Logo.scale-400.png" />
+    <Content Include="Assets\Square44x44Logo.altform-unplated_targetsize-16.png" />
+    <Content Include="Assets\Square44x44Logo.altform-unplated_targetsize-256.png" />
+    <Content Include="Assets\Square44x44Logo.altform-unplated_targetsize-32.png" />
+    <Content Include="Assets\Square44x44Logo.altform-unplated_targetsize-48.png" />
+    <Content Include="Assets\Square44x44Logo.scale-100.png" />
+    <Content Include="Assets\Square44x44Logo.scale-125.png" />
+    <Content Include="Assets\Square44x44Logo.scale-150.png" />
+    <Content Include="Assets\Square44x44Logo.scale-400.png" />
+    <Content Include="Assets\Square44x44Logo.targetsize-16.png" />
+    <Content Include="Assets\Square44x44Logo.targetsize-24.png" />
+    <Content Include="Assets\Square44x44Logo.targetsize-256.png" />
+    <Content Include="Assets\Square44x44Logo.targetsize-32.png" />
+    <Content Include="Assets\Square44x44Logo.targetsize-48.png" />
+    <Content Include="Assets\StoreLogo.scale-100.png" />
+    <Content Include="Assets\StoreLogo.scale-125.png" />
+    <Content Include="Assets\StoreLogo.scale-150.png" />
+    <Content Include="Assets\StoreLogo.scale-200.png" />
+    <Content Include="Assets\StoreLogo.scale-400.png" />
+    <Content Include="Assets\Wide310x150Logo.scale-100.png" />
+    <Content Include="Assets\Wide310x150Logo.scale-125.png" />
+    <Content Include="Assets\Wide310x150Logo.scale-150.png" />
+    <Content Include="Assets\Wide310x150Logo.scale-400.png" />
     <Content Include="Properties\Default.rd.xml" />
     <Content Include="Assets\LockScreenLogo.scale-200.png" />
     <Content Include="Assets\SplashScreen.scale-200.png" />
     <Content Include="Assets\Square150x150Logo.scale-200.png" />
     <Content Include="Assets\Square44x44Logo.scale-200.png" />
     <Content Include="Assets\Square44x44Logo.targetsize-24_altform-unplated.png" />
-    <Content Include="Assets\StoreLogo.png" />
     <Content Include="Assets\Wide310x150Logo.scale-200.png" />
   </ItemGroup>
   <ItemGroup>
@@ -121,7 +217,11 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Page Include="MainPage.xaml">
+    <Page Include="Views\HostPage.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\MainPage.xaml">
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </Page>
