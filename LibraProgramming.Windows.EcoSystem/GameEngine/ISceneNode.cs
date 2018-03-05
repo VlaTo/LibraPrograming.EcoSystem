@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.UI;
 
-namespace LibraProgramming.Windows.Games.Towers.GameEngine
+namespace LibraProgramming.Windows.EcoSystem.GameEngine
 {
     public interface ISceneNode
     {
@@ -15,11 +15,6 @@ namespace LibraProgramming.Windows.Games.Towers.GameEngine
         }
 
         ICollection<ISceneNode> Children
-        {
-            get;
-        }
-
-        GameplayController Controller
         {
             get;
         }

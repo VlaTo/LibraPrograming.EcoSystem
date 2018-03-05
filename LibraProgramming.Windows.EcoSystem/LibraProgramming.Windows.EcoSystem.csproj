@@ -119,33 +119,29 @@
     <Compile Include="Core\WeakDelegateBase.cs" />
     <Compile Include="Core\WeakEvent.cs" />
     <Compile Include="Core\WeakEventHandler.cs" />
-    <Compile Include="GameEngine\Enemy.cs" />
-    <Compile Include="GameEngine\EnemyWaveEmitter.cs" />
-    <Compile Include="GameEngine\EnemyWaveFactory.cs" />
-    <Compile Include="GameEngine\FastMovementEnemy.cs" />
-    <Compile Include="GameEngine\Game.cs" />
-    <Compile Include="GameEngine\GameplayController.cs" />
+    <Compile Include="GameEngine\BeetleBot.cs" />
+    <Compile Include="GameEngine\BeetleBotFactory.cs" />
+    <Compile Include="GameEngine\EcoSystemController.cs" />
+    <Compile Include="GameEngine\Genome.cs" />
+    <Compile Include="GameEngine\GenomeProducer.cs" />
+    <Compile Include="GameEngine\IBeetleBotFactory.cs" />
     <Compile Include="GameEngine\ICoordinatesSystem.cs" />
-    <Compile Include="GameEngine\IEnemyProvider.cs" />
-    <Compile Include="GameEngine\IGameState.cs" />
-    <Compile Include="GameEngine\IPathFinder.cs" />
+    <Compile Include="GameEngine\IEcoSystemController.cs" />
+    <Compile Include="GameEngine\IGenome.cs" />
+    <Compile Include="GameEngine\IGenomeProducer.cs" />
+    <Compile Include="GameEngine\IOpCodeGenerator.cs" />
+    <Compile Include="GameEngine\IPositioningSystem.cs" />
     <Compile Include="GameEngine\IScene.cs" />
     <Compile Include="GameEngine\ISceneNode.cs" />
     <Compile Include="GameEngine\ISceneNodeState.cs" />
-    <Compile Include="GameEngine\LandscapeMap.cs" />
-    <Compile Include="GameEngine\LaserBeam.cs" />
-    <Compile Include="GameEngine\LaserTower.cs" />
-    <Compile Include="GameEngine\MapBackground.cs" />
-    <Compile Include="GameEngine\MapSize.cs" />
-    <Compile Include="GameEngine\MyHomeBase.cs" />
-    <Compile Include="GameEngine\MyHomeBaseHealthIndicator.cs" />
     <Compile Include="GameEngine\NodeState.cs" />
-    <Compile Include="GameEngine\Position.cs" />
+    <Compile Include="GameEngine\OpCodeGenerator.cs" />
+    <Compile Include="GameEngine\Coordinates.cs" />
+    <Compile Include="GameEngine\PositioningSystem.cs" />
     <Compile Include="GameEngine\Scene.cs" />
     <Compile Include="GameEngine\SceneNode.Collection.cs" />
     <Compile Include="GameEngine\SceneNode.cs" />
     <Compile Include="GameEngine\SceneNodeState.cs" />
-    <Compile Include="GameEngine\Seeker.cs" />
     <Compile Include="GameEngine\StateAwareSceneNode.cs" />
     <Compile Include="GameEngine\UserPointer.cs" />
     <Compile Include="GameEngine\WayPath.cs" />
@@ -161,7 +157,6 @@
     <AppxManifest Include="Package.appxmanifest">
       <SubType>Designer</SubType>
     </AppxManifest>
-    <None Include="LibraProgramming.Windows.EcoSystem_TemporaryKey.pfx" />
   </ItemGroup>
   <ItemGroup>
     <Content Include="Assets\LargeTile.scale-100.png" />
@@ -228,14 +223,31 @@
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.NETCore.UniversalWindowsPlatform">
-      <Version>6.0.6</Version>
+      <Version>6.0.7</Version>
+    </PackageReference>
+    <PackageReference Include="System.Collections.Immutable">
+      <Version>1.4.0</Version>
     </PackageReference>
     <PackageReference Include="Win2D.uwp">
       <Version>1.21.0</Version>
     </PackageReference>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="LibraProgramming.EcoSystem.pfx" />
+  </ItemGroup>
+  <ItemGroup>
+    <SDKReference Include="Microsoft.VCLibs, Version=14.0">
+      <Name>Visual C++ 2015 Runtime for Universal Windows Platform Apps</Name>
+    </SDKReference>
+  </ItemGroup>
   <PropertyGroup Condition=" '$(VisualStudioVersion)' == '' or '$(VisualStudioVersion)' &lt; '14.0' ">
     <VisualStudioVersion>14.0</VisualStudioVersion>
+  </PropertyGroup>
+  <PropertyGroup>
+    <SignAssembly>true</SignAssembly>
+  </PropertyGroup>
+  <PropertyGroup>
+    <AssemblyOriginatorKeyFile>LibraProgramming.EcoSystem.pfx</AssemblyOriginatorKeyFile>
   </PropertyGroup>
   <Import Project="$(MSBuildExtensionsPath)\Microsoft\WindowsXaml\v$(VisualStudioVersion)\Microsoft.Windows.UI.Xaml.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

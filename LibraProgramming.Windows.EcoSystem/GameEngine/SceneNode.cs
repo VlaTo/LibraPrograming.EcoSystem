@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Graphics.Canvas;
 using Microsoft.Graphics.Canvas.UI;
 
-namespace LibraProgramming.Windows.Games.Towers.GameEngine
+namespace LibraProgramming.Windows.EcoSystem.GameEngine
 {
     public partial class SceneNode : ISceneNode
     {
@@ -40,8 +40,6 @@ namespace LibraProgramming.Windows.Games.Towers.GameEngine
         {
             get;
         }
-
-        public virtual GameplayController Controller => parent?.Controller;
 
         protected SceneNode()
         {

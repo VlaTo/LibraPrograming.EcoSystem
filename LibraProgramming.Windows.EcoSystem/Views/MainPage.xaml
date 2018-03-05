@@ -14,9 +14,13 @@
             VerticalScrollMode="Auto"
             HorizontalScrollMode="Auto">
             <mgc:CanvasAnimatedControl
-                ClearColor="Azure"
+                ClearColor="Black"
                 Width="1200"
                 Height="800"
+                Draw="OnCanvasAnimatedControlDraw"
+                CreateResources="OnCanvasAnimatedControlCreateResources"
+                Update="OnCanvasAnimatedControlUpdate"
+                Unloaded="OnCanvasAnimatedControlUnloaded"
             />
         </ScrollViewer>
     </Grid>

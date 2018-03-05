@@ -4,8 +4,8 @@ namespace LibraProgramming.Windows.Games.Towers.GameEngine
 {
     public interface ICoordinatesSystem
     {
-        Vector2 GetPoint(Position position);
+        Vector2 GetPoint(Coordinates position);
 
-        Position GetPosition(Vector2 point);
+        Coordinates GetPosition(Vector2 point);
     }
 }

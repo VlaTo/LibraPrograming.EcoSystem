@@ -1,9 +1,12 @@
 ﻿using System;
 
-namespace LibraProgramming.Windows.Games.Towers.GameEngine
+namespace LibraProgramming.Windows.EcoSystem.GameEngine
 {
     public interface IScene : ISceneNode, IDisposable
     {
-        void SetController(GameplayController value);
+        IEcoSystemController Controller
+        {
+            get;
+        }
     }
 }

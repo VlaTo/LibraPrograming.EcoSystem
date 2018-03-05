@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 
-namespace LibraProgramming.Windows.Games.Towers.Core
+namespace LibraProgramming.Windows.EcoSystem.Core
 {
     /// <summary>
     /// 

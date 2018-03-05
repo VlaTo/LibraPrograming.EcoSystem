@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace LibraProgramming.Windows.Games.Towers.Core
+namespace LibraProgramming.Windows.EcoSystem.Core
 {
     /// <summary>
     /// 

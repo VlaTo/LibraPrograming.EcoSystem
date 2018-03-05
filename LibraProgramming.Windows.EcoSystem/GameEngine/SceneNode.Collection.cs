@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-namespace LibraProgramming.Windows.Games.Towers.GameEngine
+namespace LibraProgramming.Windows.EcoSystem.GameEngine
 {
     public partial class SceneNode
     {
@@ -115,7 +115,7 @@ namespace LibraProgramming.Windows.Games.Towers.GameEngine
 
                 public ImmutableEnumerator(ArrayList source)
                 {
-                    this.collection = CreateArray(source);
+                    collection = CreateArray(source);
                     index = NoIndex;
                 }
 
