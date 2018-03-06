@@ -36,7 +36,8 @@
         /// <returns></returns>
         public BeetleBot CreateBeetleBot(IGenome genome)
         {
-            var beetleBot = new BeetleBot(genome, positioningSystem);
+            var origin = positioningSystem.GetRandomCoordinates();
+            var beetleBot = new BeetleBot(origin, genome, positioningSystem);
 
             return beetleBot;
         }

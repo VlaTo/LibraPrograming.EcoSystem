@@ -25,12 +25,11 @@ namespace LibraProgramming.Windows.EcoSystem.Views
         {
             args.DrawingSession.Antialiasing = CanvasAntialiasing.Aliased;
             DrawGrid(sender, args.DrawingSession, sender.Size.ToVector2());
+            scene.Draw(args.DrawingSession);
         }
 
         private void DrawGrid(ICanvasAnimatedControl control, CanvasDrawingSession session, Vector2 size)
         {
-            scene.Draw(session);
-
             var brush = new CanvasSolidColorBrush(control, Colors.Gray);
             
             for(var y = 0.0f; y <= size.Y; y += GridSize.Y)

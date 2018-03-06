@@ -7,15 +7,15 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
     internal sealed class PositioningSystem : IPositioningSystem
     {
         private readonly Size size;
-        private readonly Coordinates cell;
+        private readonly Coordinates cells;
         private readonly Point grid;
 
-        public PositioningSystem(Size size, Coordinates cell)
+        public PositioningSystem(Size size, Coordinates cells)
         {
             this.size = size;
-            this.cell = cell;
+            this.cells = cells;
 
-            grid = new Point(size.Width / cell.X, size.Height / cell.Y);
+            grid = new Point(size.Width / cells.X, size.Height / cells.Y);
         }
 
         public Coordinates GetCoordinates(Vector2 position)
@@ -35,10 +35,25 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
             if (0 < coordinates.Y)
             {
-                x += grid.Y * (coordinates.Y - 1);
+                y += grid.Y * (coordinates.Y - 1);
             }
 
             return new Vector2((float)x, (float)y);
+        }
+
+        public Coordinates GetRandomCoordinates()
+        {
+            return new Coordinates(cells.X / 2, cells.Y / 2);
+        }
+
+        public bool IsFree(Coordinates coordinates)
+        {
+            return true;
+        }
+
+        public bool IsObstacle(Coordinates coordinates)
+        {
+            return false;
         }
     }
 }

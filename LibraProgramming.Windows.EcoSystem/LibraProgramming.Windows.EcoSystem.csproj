@@ -125,7 +125,6 @@
     <Compile Include="GameEngine\Genome.cs" />
     <Compile Include="GameEngine\GenomeProducer.cs" />
     <Compile Include="GameEngine\IBeetleBotFactory.cs" />
-    <Compile Include="GameEngine\ICoordinatesSystem.cs" />
     <Compile Include="GameEngine\IEcoSystemController.cs" />
     <Compile Include="GameEngine\IGenome.cs" />
     <Compile Include="GameEngine\IGenomeProducer.cs" />

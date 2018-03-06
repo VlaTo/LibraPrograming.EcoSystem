@@ -14,7 +14,7 @@
             VerticalScrollMode="Auto"
             HorizontalScrollMode="Auto">
             <mgc:CanvasAnimatedControl
-                ClearColor="Black"
+                ClearColor="DarkGray"
                 Width="1200"
                 Height="800"
                 Draw="OnCanvasAnimatedControlDraw"

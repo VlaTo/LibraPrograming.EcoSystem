@@ -64,7 +64,7 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
         public Task InitializeAsync(CanvasCreateResourcesReason reason)
         {
-            for (var primary = 0; primary < PrimaryBotsCount; primary++)
+            /*for (var primary = 0; primary < PrimaryBotsCount; primary++)
             {
                 var primaryBot = factory.CreateBeetleBot();
 
@@ -76,7 +76,11 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
                     AddBeetleBot(nestedBot);
                 }
-            }
+            }*/
+
+            var bot = factory.CreateBeetleBot();
+
+            AddBeetleBot(bot);
 
             return scene.CreateResourcesAsync(control, reason);
         }
