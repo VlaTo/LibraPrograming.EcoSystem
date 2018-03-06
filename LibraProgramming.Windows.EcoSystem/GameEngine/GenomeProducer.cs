@@ -20,8 +20,7 @@
 
             for(var index = 0; index < cellCount; index++)
             {
-                //genome[index] = opCodeGenerator.NextOpCode();
-                genome[index] = 3;
+                genome[index] = opCodeGenerator.NextOpCode();
             }
 
             return genome;

@@ -1,6 +1,7 @@
 ﻿using LibraProgramming.Windows.EcoSystem.Core;
 using Microsoft.Graphics.Canvas;
 using System;
+using System.Diagnostics;
 using System.Numerics;
 using Windows.Foundation;
 using Windows.UI;
@@ -22,7 +23,6 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
     {
         private readonly IPositioningSystem positioningSystem;
         private readonly WeakEventHandler<BeetleBotEventArgs> dies;
-        private readonly float speed;
 
         public float Angle
         {
@@ -30,13 +30,19 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             protected set;
         }
 
-        public TimeSpan Age
+        public TimeSpan Lifespan
         {
             get;
             private set;
         }
 
         public Vector2 Position
+        {
+            get;
+            private set;
+        }
+
+        public float Speed
         {
             get;
             private set;
@@ -60,18 +66,20 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             remove => dies.RemoveHandler(value);
         }
 
-        public BeetleBot(Coordinates coordinates, IGenome genome, IPositioningSystem positioningSystem)
+        public BeetleBot(Coordinates coordinates, IGenome genome, TimeSpan lifespan, IPositioningSystem positioningSystem)
         {
             this.positioningSystem = positioningSystem;
 
             dies = new WeakEventHandler<BeetleBotEventArgs>();
-            speed = 1.0f;
 
             Angle = 0.0f;
             Genome = genome;
             Coordinates = coordinates;
             Position = positioningSystem.GetPosition(coordinates);
+            Speed = 1.0f;
+            Lifespan = lifespan;
             State = new StartState();
+            //State = NodeState.Empty<BeetleBot>();
         }
 
         public override void Draw(CanvasDrawingSession session)
@@ -94,6 +102,8 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         /// </summary>
         private abstract class GenomeState : SceneNodeState<BeetleBot>
         {
+            private static readonly MovingDirection[] directions;
+
             protected int Ip
             {
                 get;
@@ -103,6 +113,21 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             protected GenomeState(int ip)
             {
                 Ip = ip;
+            }
+
+            static GenomeState()
+            {
+                directions = new[]
+                {
+                    MovingDirection.Right,
+                    MovingDirection.DownRight,
+                    MovingDirection.Down,
+                    MovingDirection.DownLeft,
+                    MovingDirection.Left,
+                    MovingDirection.UpLeft,
+                    MovingDirection.Up,
+                    MovingDirection.UpRight
+                };
             }
 
             protected ISceneNodeState GetNextState()
@@ -134,53 +159,8 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
             private MovingDirection GetDirection(byte opcode)
             {
-                switch (opcode)
-                {
-                    case 0:
-                    {
-                        return MovingDirection.Up;
-                    }
-
-                    case 1:
-                    {
-                        return MovingDirection.UpRight;
-                    }
-
-                    case 2:
-                    {
-                        return MovingDirection.Right;
-                    }
-
-                    case 3:
-                    {
-                        return MovingDirection.DownRight;
-                    }
-
-                    case 4:
-                    {
-                        return MovingDirection.Down;
-                    }
-
-                    case 5:
-                    {
-                        return MovingDirection.DownLeft;
-                    }
-
-                    case 6:
-                    {
-                        return MovingDirection.Left;
-                    }
-
-                    case 7:
-                    {
-                        return MovingDirection.UpLeft;
-                    }
-
-                    default:
-                    {
-                        throw new NotSupportedException();
-                    }
-                }
+                var index = opcode % directions.Length;
+                return directions[index];
             }
         }
 
@@ -220,12 +200,27 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         /// </summary>
         private class RotateAndMoveState : GenomeState
         {
-            private const float Epsilon = 1.0f;
+            private const float DistanceEpsilon = 1.0f;
+            private const float AngleRotation = 0.03f;
 
             private readonly MovingDirection direction;
+
+            private float rotation;
             private int step;
 
+            protected Vector2 Origin
+            {
+                get;
+                private set;
+            }
+
             protected Vector2 Destination
+            {
+                get;
+                private set;
+            }
+
+            protected float Angle
             {
                 get;
                 private set;
@@ -247,39 +242,93 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             {
                 switch (step)
                 {
+                    // initiate
                     case 0:
                     {
                         Coordinates = Node.Coordinates + GetDestinationDelta(direction);
                         Destination = GetPosition(Coordinates);
+                        Angle = GetAngle(direction);
 
-                        if (false == CanMoveTo(Coordinates))
+                        if (Node.Coordinates != Coordinates && CanMoveTo(Coordinates))
                         {
-                            step = 2;
+                            step++;
                         }
                         else
                         {
-                            step++;
+                            step = 4;
                         }
 
                         break;
                     }
 
+                    // rotate
                     case 1:
                     {
-                        if (Epsilon >= Vector2.Distance(Node.Position, Destination))
+                        var temp1 = Node.Angle - Angle;
+                        var temp2 = Angle - Node.Angle;
+
+                        Debug.WriteLine("Current: {0}; Destination: {1}; delta1: {2}; delta2: {3}", Node.Angle, Angle, temp1, temp2);
+
+                        var sign = Math.Sign(Node.Angle);
+
+                        if (sign == Math.Sign(Angle))
                         {
-                            step++;
+                            if (sign > 0)
+                            {
+                                rotation = Node.Angle > Angle ? -AngleRotation : AngleRotation;
+                            }
+                            else
+                            {
+                                rotation = Node.Angle > Angle ? AngleRotation : -AngleRotation;
+                            }
                         }
                         else
                         {
-                            var direction = new Point(Math.Cos(Node.Angle), Math.Sin(Node.Angle));
-                            Node.Position += direction.ToVector2() * Node.speed;
+                            rotation = AngleRotation;
                         }
+
+                        step++;
 
                         break;
                     }
 
                     case 2:
+                    {
+                        var angle = Convert.ToSingle(Node.Angle % Math.PI * 2.0d);
+
+                        if (AngleRotation >= Math.Abs(angle - Angle))
+                        {
+                            step++;
+                            Node.Angle = Angle;
+                        }
+                        else
+                        {
+                            Node.Angle += rotation;
+                        }
+
+                        break;
+                    }
+
+                    // move
+                    case 3:
+                    {
+                        if (DistanceEpsilon >= Vector2.Distance(Node.Position, Destination))
+                        {
+                            step++;
+                            Node.Position = Destination;
+                            Node.Coordinates = Coordinates;
+                        }
+                        else
+                        {
+                            var direction = new Point(Math.Cos(Node.Angle), Math.Sin(Node.Angle));
+                            Node.Position += direction.ToVector2() * Node.Speed;
+                        }
+
+                        break;
+                    }
+
+                    // done
+                    case 4:
                     {
                         DoComplete();
                         break;
@@ -296,16 +345,6 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             {
                 switch (direction)
                 {
-                    case MovingDirection.Up:
-                    {
-                        return new Coordinates(0, -1);
-                    }
-
-                    case MovingDirection.UpRight:
-                    {
-                        return new Coordinates(1, -1);
-                    }
-
                     case MovingDirection.Right:
                     {
                         return new Coordinates(1, 0);
@@ -336,6 +375,16 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
                         return new Coordinates(-1, -1);
                     }
 
+                    case MovingDirection.Up:
+                    {
+                        return new Coordinates(0, -1);
+                    }
+
+                    case MovingDirection.UpRight:
+                    {
+                        return new Coordinates(1, -1);
+                    }
+
                     default:
                     {
                         throw new Exception();
@@ -343,9 +392,51 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
                 }
             }
 
-            protected Vector2 GetPosition()
+            protected float GetAngle(MovingDirection direction)
             {
-                return GetPosition(Node.Coordinates);
+                switch (direction)
+                {
+                    case MovingDirection.DownRight:
+                    {
+                        return Convert.ToSingle(Math.PI * 0.25d);
+                    }
+
+                    case MovingDirection.Down:
+                    {
+                        return Convert.ToSingle(Math.PI * 0.5d);
+                    }
+
+                    case MovingDirection.DownLeft:
+                    {
+                        return Convert.ToSingle(Math.PI * 0.75d);
+                    }
+
+                    case MovingDirection.Left:
+                    {
+                        return Convert.ToSingle(Math.PI);
+                    }
+
+                    case MovingDirection.UpLeft:
+                    {
+                        return Convert.ToSingle(5.0d * Math.PI / 4.0d);
+                    }
+
+                    case MovingDirection.Up:
+                    {
+                        return Convert.ToSingle(3.0d * Math.PI / 2.0d);
+                    }
+
+                    case MovingDirection.UpRight:
+                    {
+                        return Convert.ToSingle(7.0d * Math.PI / 4.0d);
+                    }
+
+                    case MovingDirection.Right:
+                    default:
+                    {
+                        return 0.0f;
+                    }
+                }
             }
 
             protected Vector2 GetPosition(Coordinates coordinates)

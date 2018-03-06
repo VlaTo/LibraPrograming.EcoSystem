@@ -1,4 +1,6 @@
-﻿namespace LibraProgramming.Windows.EcoSystem.GameEngine
+﻿using System;
+
+namespace LibraProgramming.Windows.EcoSystem.GameEngine
 {
     /// <summary>
     /// 
@@ -37,7 +39,7 @@
         public BeetleBot CreateBeetleBot(IGenome genome)
         {
             var origin = positioningSystem.GetRandomCoordinates();
-            var beetleBot = new BeetleBot(origin, genome, positioningSystem);
+            var beetleBot = new BeetleBot(origin, genome, TimeSpan.FromSeconds(10.0d), positioningSystem);
 
             return beetleBot;
         }

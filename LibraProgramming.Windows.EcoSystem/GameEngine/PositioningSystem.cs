@@ -30,12 +30,12 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             
             if (0 < coordinates.X)
             {
-                x += grid.X * (coordinates.X - 1);
+                x += (grid.X * coordinates.X);
             }
 
             if (0 < coordinates.Y)
             {
-                y += grid.Y * (coordinates.Y - 1);
+                y += (grid.Y * coordinates.Y);
             }
 
             return new Vector2((float)x, (float)y);
