@@ -34,6 +34,14 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             }
         }
 
+        public virtual IEcoSystemController Controller
+        {
+            get
+            {
+                return null != Parent ? Parent.Controller : null;
+            }
+        }
+
         ICollection<ISceneNode> ISceneNode.Children => Children;
 
         protected SceneNodeCollection Children

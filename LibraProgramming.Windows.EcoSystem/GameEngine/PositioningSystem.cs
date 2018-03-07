@@ -45,15 +45,5 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         {
             return new Coordinates(cells.X / 2, cells.Y / 2);
         }
-
-        public bool IsFree(Coordinates coordinates)
-        {
-            return true;
-        }
-
-        public bool IsObstacle(Coordinates coordinates)
-        {
-            return false;
-        }
     }
 }

@@ -19,6 +19,11 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             get;
         }
 
+        IEcoSystemController Controller
+        {
+            get;
+        }
+
         Task CreateResourcesAsync(ICanvasResourceCreatorWithDpi creator, CanvasCreateResourcesReason reason);
 
         void Draw(CanvasDrawingSession session);

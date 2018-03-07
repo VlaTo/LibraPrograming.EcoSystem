@@ -121,6 +121,7 @@
     <Compile Include="Core\WeakEventHandler.cs" />
     <Compile Include="GameEngine\BeetleBot.cs" />
     <Compile Include="GameEngine\BeetleBotFactory.cs" />
+    <Compile Include="GameEngine\BeetleBotMessage.cs" />
     <Compile Include="GameEngine\EcoSystemController.cs" />
     <Compile Include="GameEngine\Genome.cs" />
     <Compile Include="GameEngine\GenomeProducer.cs" />
@@ -133,6 +134,8 @@
     <Compile Include="GameEngine\IScene.cs" />
     <Compile Include="GameEngine\ISceneNode.cs" />
     <Compile Include="GameEngine\ISceneNodeState.cs" />
+    <Compile Include="GameEngine\ISubject.cs" />
+    <Compile Include="GameEngine\LandscapeGrid.cs" />
     <Compile Include="GameEngine\NodeState.cs" />
     <Compile Include="GameEngine\OpCodeGenerator.cs" />
     <Compile Include="GameEngine\Coordinates.cs" />
@@ -143,7 +146,6 @@
     <Compile Include="GameEngine\SceneNodeState.cs" />
     <Compile Include="GameEngine\StateAwareSceneNode.cs" />
     <Compile Include="GameEngine\UserPointer.cs" />
-    <Compile Include="GameEngine\WayPath.cs" />
     <Compile Include="Views\HostPage.xaml.cs">
       <DependentUpon>HostPage.xaml</DependentUpon>
     </Compile>

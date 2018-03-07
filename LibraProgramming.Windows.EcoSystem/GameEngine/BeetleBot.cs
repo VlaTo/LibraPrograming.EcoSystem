@@ -1,7 +1,5 @@
-﻿using LibraProgramming.Windows.EcoSystem.Core;
-using Microsoft.Graphics.Canvas;
+﻿using Microsoft.Graphics.Canvas;
 using System;
-using System.Diagnostics;
 using System.Numerics;
 using Windows.Foundation;
 using Windows.UI;
@@ -11,18 +9,10 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
     /// <summary>
     /// 
     /// </summary>
-    public class BeetleBotEventArgs : EventArgs
-    {
-
-    }
-
-    /// <summary>
-    /// 
-    /// </summary>
     public class BeetleBot : StateAwareSceneNode<BeetleBot>
     {
-        private readonly IPositioningSystem positioningSystem;
-        private readonly WeakEventHandler<BeetleBotEventArgs> dies;
+        private Coordinates coordinates;
+        private bool canFireEvents;
 
         public float Angle
         {
@@ -50,8 +40,20 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
         public Coordinates Coordinates
         {
-            get;
-            private set;
+            get => coordinates;
+            private set
+            {
+                if (value == coordinates)
+                {
+                    return;
+                }
+
+                var origin = coordinates;
+
+                coordinates = value;
+
+                DoMove(new BeetleBotMoveMessage(this, origin, coordinates));
+            }
         }
 
         public IGenome Genome
@@ -60,26 +62,26 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             private set;
         }
 
-        public event EventHandler<BeetleBotEventArgs> Dies
+        public BeetleBot(Coordinates coordinates, IGenome genome, TimeSpan lifespan)
         {
-            add => dies.AddHandler(value);
-            remove => dies.RemoveHandler(value);
-        }
-
-        public BeetleBot(Coordinates coordinates, IGenome genome, TimeSpan lifespan, IPositioningSystem positioningSystem)
-        {
-            this.positioningSystem = positioningSystem;
-
-            dies = new WeakEventHandler<BeetleBotEventArgs>();
-
+            Coordinates = coordinates;
             Angle = 0.0f;
             Genome = genome;
-            Coordinates = coordinates;
-            Position = positioningSystem.GetPosition(coordinates);
             Speed = 1.0f;
             Lifespan = lifespan;
+        }
+
+        protected override void DoParentAdded()
+        {
+            canFireEvents = true;
+            Position = Controller.Positioning.GetPosition(Coordinates);
             State = new StartState();
-            //State = NodeState.Empty<BeetleBot>();
+            DoMove(new BeetleBotMoveMessage(this, null, Coordinates));
+        }
+
+        protected override void DoParentRemoved()
+        {
+            canFireEvents = false;
         }
 
         public override void Draw(CanvasDrawingSession session)
@@ -92,9 +94,20 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             session.DrawLine(Position, end, Colors.LightGray);
         }
 
-        private void DoDie()
+        private void DoDie(BeetleBotDiesMessage message)
         {
-            dies.Invoke(this, new BeetleBotEventArgs());
+            if (canFireEvents)
+            {
+                Controller.BeetleBotMessage.OnNext(message);
+            }
+        }
+
+        private void DoMove(BeetleBotMoveMessage message)
+        {
+            if (canFireEvents)
+            {
+                Controller.BeetleBotMessage.OnNext(message);
+            }
         }
 
         /// <summary>
@@ -201,7 +214,9 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         private class RotateAndMoveState : GenomeState
         {
             private const float DistanceEpsilon = 1.0f;
-            private const float AngleRotation = 0.03f;
+            private const float RotationEpsilon = 0.03f;
+            private static readonly float RotationStep = Convert.ToSingle(Math.PI / 20.0d);
+            private static readonly float PI2 = Convert.ToSingle(Math.PI * 2.0d);
 
             private readonly MovingDirection direction;
 
@@ -261,30 +276,21 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
                         break;
                     }
 
-                    // rotate
+                    // calculate rotation direction
                     case 1:
                     {
-                        var temp1 = Node.Angle - Angle;
-                        var temp2 = Angle - Node.Angle;
-
-                        Debug.WriteLine("Current: {0}; Destination: {1}; delta1: {2}; delta2: {3}", Node.Angle, Angle, temp1, temp2);
-
-                        var sign = Math.Sign(Node.Angle);
-
-                        if (sign == Math.Sign(Angle))
+                        if(RotationEpsilon >= Math.Abs(Node.Angle - Angle))
                         {
-                            if (sign > 0)
-                            {
-                                rotation = Node.Angle > Angle ? -AngleRotation : AngleRotation;
-                            }
-                            else
-                            {
-                                rotation = Node.Angle > Angle ? AngleRotation : -AngleRotation;
-                            }
+                            step = 3;
+                            break;
+                        }
+                        else if (Node.Angle > Angle)
+                        {
+                            rotation = -RotationStep;
                         }
                         else
                         {
-                            rotation = AngleRotation;
+                            rotation = RotationStep;
                         }
 
                         step++;
@@ -292,18 +298,19 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
                         break;
                     }
 
+                    // rotate
                     case 2:
                     {
-                        var angle = Convert.ToSingle(Node.Angle % Math.PI * 2.0d);
+                        var angle = NormalizeAngle(Node.Angle + rotation);
 
-                        if (AngleRotation >= Math.Abs(angle - Angle))
+                        if (RotationEpsilon >= Math.Abs(Angle - angle))
                         {
                             step++;
                             Node.Angle = Angle;
                         }
                         else
                         {
-                            Node.Angle += rotation;
+                            Node.Angle = angle;
                         }
 
                         break;
@@ -441,14 +448,18 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
             protected Vector2 GetPosition(Coordinates coordinates)
             {
-                var positioningSystem = Node.positioningSystem;
+                var positioningSystem = Node.Controller.Positioning;
                 return positioningSystem.GetPosition(coordinates);
             }
 
             protected bool CanMoveTo(Coordinates coordinates)
             {
-                var positioningSystem = Node.positioningSystem;
-                return positioningSystem.IsFree(coordinates) && false == positioningSystem.IsObstacle(coordinates);
+                return Node.Controller.IsFreeCell(coordinates) && false == Node.Controller.IsObstacleInCell(coordinates);
+            }
+
+            private static float NormalizeAngle(float angle)
+            {
+                return Convert.ToSingle(angle % PI2);
             }
         }
 

@@ -4,18 +4,65 @@ using System.Threading.Tasks;
 
 namespace LibraProgramming.Windows.EcoSystem.GameEngine
 {
+    /// <summary>
+    /// 
+    /// </summary>
     public interface IEcoSystemController
     {
+        /// <summary>
+        /// 
+        /// </summary>
         IScene Scene
         {
             get;
-            set;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        ISubject<BeetleBotMessage> BeetleBotMessage
+        {
+            get;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        IPositioningSystem Positioning
+        {
+            get;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="reason"></param>
+        /// <returns></returns>
         Task InitializeAsync(CanvasCreateResourcesReason reason);
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="elapsed"></param>
         void Update(TimeSpan elapsed);
 
+        /// <summary>
+        /// 
+        /// </summary>
         void Shutdown();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="coordinates"></param>
+        /// <returns></returns>
+        bool IsFreeCell(Coordinates coordinates);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="coordinates"></param>
+        /// <returns></returns>
+        bool IsObstacleInCell(Coordinates coordinates);
     }
 }

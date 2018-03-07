@@ -39,7 +39,7 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         public BeetleBot CreateBeetleBot(IGenome genome)
         {
             var origin = positioningSystem.GetRandomCoordinates();
-            var beetleBot = new BeetleBot(origin, genome, TimeSpan.FromSeconds(10.0d), positioningSystem);
+            var beetleBot = new BeetleBot(origin, genome, TimeSpan.FromSeconds(10.0d));
 
             return beetleBot;
         }

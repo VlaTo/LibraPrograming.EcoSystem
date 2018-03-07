@@ -8,7 +8,7 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
     /// 
     /// </summary>
     [DebuggerDisplay("X = {X}, Y = {Y}")]
-    public struct Coordinates : IEquatable<Coordinates>
+    public sealed class Coordinates : IEquatable<Coordinates>
     {
         /// <summary>
         /// 
@@ -34,6 +34,16 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
         public bool Equals(Coordinates other)
         {
+            if (ReferenceEquals(null, other))
+            {
+                return false;
+            }
+
+            if (ReferenceEquals(this, other))
+            {
+                return true;
+            }
+
             return X == other.X && Y == other.Y;
         }
 
@@ -102,11 +112,21 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
         public static bool operator ==(Coordinates left, Coordinates right)
         {
+            if (ReferenceEquals(null, left))
+            {
+                return ReferenceEquals(null, right);
+            }
+
             return left.Equals(right);
         }
 
         public static bool operator !=(Coordinates left, Coordinates right)
         {
+            if (ReferenceEquals(null, left))
+            {
+                return false == ReferenceEquals(null, right);
+            }
+
             return false == left.Equals(right);
         }
 

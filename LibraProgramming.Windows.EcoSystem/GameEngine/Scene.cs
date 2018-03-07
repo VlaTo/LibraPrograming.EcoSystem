@@ -1,5 +1,4 @@
 ﻿using LibraProgramming.Windows.Games.Towers.Core.ServiceContainer;
-using System.Numerics;
 
 namespace LibraProgramming.Windows.EcoSystem.GameEngine
 {
@@ -8,42 +7,20 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
     /// </summary>
     public class Scene : SceneNode, IScene
     {
-        private IEcoSystemController controller;
-
-        private Vector2 size;
-
         /// <summary>
         /// 
         /// </summary>
-        public IEcoSystemController Controller
+        public override IEcoSystemController Controller
         {
-            get
-            {
-                return controller;
-            }
-            private set
-            {
-                if (null != controller)
-                {
-                    controller.Scene = null;
-                }
-
-                controller = value;
-
-                if (null != controller)
-                {
-                    controller.Scene = this;
-                }
-            }
+            get;
         }
 
         /// <summary>
         /// 
         /// </summary>
         [PrefferedConstructor]
-        public Scene(IEcoSystemController controller, Vector2 size)
+        public Scene(IEcoSystemController controller)
         {
-            this.size = size;
             Controller = controller;
         }
 

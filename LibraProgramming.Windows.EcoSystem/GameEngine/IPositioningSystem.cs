@@ -26,19 +26,5 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         /// </summary>
         /// <returns></returns>
         Coordinates GetRandomCoordinates();
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="coordinates"></param>
-        /// <returns></returns>
-        bool IsFree(Coordinates coordinates);
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="coordinates"></param>
-        /// <returns></returns>
-        bool IsObstacle(Coordinates coordinates);
     }
 }
