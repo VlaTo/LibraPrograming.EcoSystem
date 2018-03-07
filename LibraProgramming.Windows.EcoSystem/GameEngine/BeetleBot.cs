@@ -14,30 +14,36 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         private Coordinates coordinates;
         private bool canFireEvents;
 
+        /// <summary>
+        /// 
+        /// </summary>
         public float Angle
         {
             get;
             protected set;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public TimeSpan Lifespan
         {
             get;
             private set;
         }
-
-        public Vector2 Position
-        {
-            get;
-            private set;
-        }
-
+        
+        /// <summary>
+        /// 
+        /// </summary>
         public float Speed
         {
             get;
             private set;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public Coordinates Coordinates
         {
             get => coordinates;
@@ -56,12 +62,30 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             }
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public IGenome Genome
         {
             get;
             private set;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        protected Vector2 Position
+        {
+            get;
+            private set;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="coordinates"></param>
+        /// <param name="genome"></param>
+        /// <param name="lifespan"></param>
         public BeetleBot(Coordinates coordinates, IGenome genome, TimeSpan lifespan)
         {
             Coordinates = coordinates;
@@ -69,6 +93,20 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             Genome = genome;
             Speed = 1.0f;
             Lifespan = lifespan;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="session"></param>
+        public override void Draw(CanvasDrawingSession session)
+        {
+            var direction = new Point(Math.Cos(Angle), Math.Sin(Angle));
+            var end = Position + direction.ToVector2() * 11.0f;
+
+            session.FillCircle(Position, 8.0f, Colors.Blue);
+            session.DrawCircle(Position, 8.0f, Colors.LightGray);
+            session.DrawLine(Position, end, Colors.LightGray);
         }
 
         protected override void DoParentAdded()
@@ -82,16 +120,6 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         protected override void DoParentRemoved()
         {
             canFireEvents = false;
-        }
-
-        public override void Draw(CanvasDrawingSession session)
-        {
-            var direction = new Point(Math.Cos(Angle), Math.Sin(Angle));
-            var end = Position + direction.ToVector2() * 11.0f;
-
-            session.FillCircle(Position, 8.0f, Colors.Blue);
-            session.DrawCircle(Position, 8.0f, Colors.LightGray);
-            session.DrawLine(Position, end, Colors.LightGray);
         }
 
         private void DoDie(BeetleBotDiesMessage message)

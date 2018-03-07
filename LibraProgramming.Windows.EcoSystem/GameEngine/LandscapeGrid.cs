@@ -44,6 +44,64 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
             var cell = new Size(cellSize.Width - thickness, cellSize.Height - thickness);
 
+            /*for (var y = 0; y < 40; y++)
+            {
+                for (var x = 0; x < 8; x++)
+                {
+                    var coordinates = new Coordinates(x, y);
+                    Color brush = Colors.Transparent;
+
+                    var point = new Point(x * dx, y * dy);
+
+                    switch (x)
+                    {
+                        case 0:
+                        {
+                            brush = Colors.DarkGray;
+                            break;
+                        }
+
+                        case 1:
+                        {
+                            brush = Colors.DimGray;
+                            break;
+                        }
+
+                        case 2:
+                        {
+                            brush = Colors.Gray;
+                            break;
+                        }
+
+                        case 3:
+                        {
+                            brush = Colors.LightGray;
+                            break;
+                        }
+
+                        case 4:
+                        {
+                            brush = Colors.DarkSlateGray;
+                            break;
+                        }
+
+                        case 5:
+                        {
+                            brush = Colors.LightSlateGray;
+                            break;
+                        }
+
+                        case 6:
+                        {
+                            brush = Colors.SlateGray;
+                            break;
+                        }
+                    }
+
+                    session.FillRectangle(new Rect(point, cell), brush);
+                }
+            }*/
+
             for (var y = 0; y < 40; y++)
             {
                 for (var x = 0; x < 60; x++)
@@ -53,7 +111,7 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
                     if (Controller.IsObstacleInCell(coordinates))
                     {
-                        brush = Colors.DarkCyan;
+                        brush = Colors.SlateGray;
                     }
                     else if (false == Controller.IsFreeCell(coordinates))
                     {

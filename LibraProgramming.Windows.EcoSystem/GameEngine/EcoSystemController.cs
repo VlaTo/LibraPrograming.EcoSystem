@@ -84,19 +84,17 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
             Scene.Children.Add(landscapeGrid);
 
-            cells[0, 0] = Byte.MaxValue;
-            cells[0, 1] = Byte.MaxValue;
-            cells[0, 2] = Byte.MaxValue;
-            cells[0, 3] = Byte.MaxValue;
-            cells[0, 4] = Byte.MaxValue;
-            cells[0, 5] = Byte.MaxValue;
-            //cells[0, 0] = Byte.MaxValue;
-            //cells[0, 0] = Byte.MaxValue;
-            //cells[0, 0] = Byte.MaxValue;
-            //cells[0, 0] = Byte.MaxValue;
-            //cells[0, 0] = Byte.MaxValue;
+            for(var y = 0; y < 60; y++)
+            {
+                cells[0, y] = Byte.MaxValue;
+                cells[39, y] = Byte.MaxValue;
+            }
 
-            //free = free.AddRange(GetFreeCells());
+            for(var x = 1; x < 39; x++)
+            {
+                cells[x, 0] = Byte.MaxValue;
+                cells[x, 59] = Byte.MaxValue;
+            }
 
             /*for (var primary = 0; primary < PrimaryBotsCount; primary++)
             {
