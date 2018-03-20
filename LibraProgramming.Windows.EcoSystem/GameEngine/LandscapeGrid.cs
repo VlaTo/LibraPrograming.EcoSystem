@@ -16,6 +16,12 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         private readonly Size cellSize;
         private CanvasSolidColorBrush gridColorBrush;
 
+        public Coordinates Cursor
+        {
+            get;
+            set;
+        }
+
         public LandscapeGrid(Size size, Size cellSize, Color gridColor)
         {
             this.size = size;
@@ -43,64 +49,7 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             DrawParallels(session, width, height, thickness);
 
             var cell = new Size(cellSize.Width - thickness, cellSize.Height - thickness);
-
-            /*for (var y = 0; y < 40; y++)
-            {
-                for (var x = 0; x < 8; x++)
-                {
-                    var coordinates = new Coordinates(x, y);
-                    Color brush = Colors.Transparent;
-
-                    var point = new Point(x * dx, y * dy);
-
-                    switch (x)
-                    {
-                        case 0:
-                        {
-                            brush = Colors.DarkGray;
-                            break;
-                        }
-
-                        case 1:
-                        {
-                            brush = Colors.DimGray;
-                            break;
-                        }
-
-                        case 2:
-                        {
-                            brush = Colors.Gray;
-                            break;
-                        }
-
-                        case 3:
-                        {
-                            brush = Colors.LightGray;
-                            break;
-                        }
-
-                        case 4:
-                        {
-                            brush = Colors.DarkSlateGray;
-                            break;
-                        }
-
-                        case 5:
-                        {
-                            brush = Colors.LightSlateGray;
-                            break;
-                        }
-
-                        case 6:
-                        {
-                            brush = Colors.SlateGray;
-                            break;
-                        }
-                    }
-
-                    session.FillRectangle(new Rect(point, cell), brush);
-                }
-            }*/
+            var cursor = Cursor;
 
             for (var y = 0; y < 40; y++)
             {
@@ -109,22 +58,31 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
                     var coordinates = new Coordinates(x, y);
                     Color brush = Colors.Transparent;
 
-                    if (Controller.IsObstacleInCell(coordinates))
+                    if (Controller.IsObstacle(coordinates))
                     {
                         brush = Colors.SlateGray;
                     }
-                    else if (false == Controller.IsFreeCell(coordinates))
+                    /*else if (Controller.IsOccupied(coordinates))
                     {
                         brush = Colors.Gray;
-                    }
-                    else
+                    }*/
+                    else if (Controller.IsFood(coordinates, out var amount))
                     {
-                        continue;
+                        brush = Colors.LawnGreen;
                     }
 
                     var point = new Point(x * dx, y * dy);
 
-                    session.FillRectangle(new Rect(point, cell), brush);
+                    if (Colors.Transparent != brush)
+                    {
+                        session.FillRectangle(new Rect(point, cell), brush);
+                    }
+
+                    if (coordinates == cursor)
+                    {
+
+                        session.DrawRectangle(new Rect(point, cell), Colors.WhiteSmoke);
+                    }
                 }
             }
         }

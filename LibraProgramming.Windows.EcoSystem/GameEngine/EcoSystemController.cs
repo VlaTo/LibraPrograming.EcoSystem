@@ -8,6 +8,10 @@ using System.Collections.Immutable;
 using System.Collections.Generic;
 using Windows.Foundation;
 using Windows.UI;
+using System.Numerics;
+using Windows.UI.Xaml;
+using Windows.System;
+using Windows.Devices.Input;
 
 namespace LibraProgramming.Windows.EcoSystem.GameEngine
 {
@@ -17,16 +21,24 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
     public sealed class EcoSystemController : IEcoSystemController
     {
         private const int GenomeLength = 64;
-        private const int PrimaryBotsCount = 8;
+        private const int AlphaBotsCount = 8;
         private const int NestedBotsCount = 8;
+        private const byte Wall = Byte.MaxValue;
+        private const byte Occupied = Byte.MaxValue - 1;
+        private const byte Free = Byte.MinValue;
 
         private readonly CanvasAnimatedControl control;
-        private readonly IGenomeProducer genomeProducer;
-        private readonly IBeetleBotFactory factory;
         private readonly IOpCodeGenerator generator;
+        private readonly IGenomeProducer genomeProducer;
+        private readonly ICreatePositionProvider positionProvider;
+        private readonly IBeetleBotFactory factory;
+        private readonly IEnumerable<Coordinates> obstacles;
+        private readonly Point cellSize;
+        private readonly Coordinates map;
+        private readonly Random random;
+
+        private LandscapeGrid landscape;
         private ImmutableList<BeetleBot> beetleBots;
-        //private ImmutableList<Coordinates> occupied;
-        //private ImmutableList<Coordinates> free;
         private IDisposable subscription;
         private byte[,] cells;
 
@@ -41,107 +53,250 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             get;
         }
 
-        public IPositioningSystem Positioning
+        public int Epoch
         {
             get;
+            private set;
         }
 
         [PrefferedConstructor]
-        public EcoSystemController(CanvasAnimatedControl control)
+        public EcoSystemController(CanvasAnimatedControl control, IEnumerable<Coordinates> obstacles)
         {
             this.control = control;
+            this.obstacles = obstacles;
 
-            cells = new byte[40, 60];
-            beetleBots = ImmutableList<BeetleBot>.Empty;
-
-            Scene = new Scene(this);
-            Positioning = new PositioningSystem(control.Size, new Coordinates(60, 40));
-            BeetleBotMessage = new BeetleBotSubject();
-
+            random = new Random();
             generator = new OpCodeGenerator();
-            genomeProducer = new GenomeProducer(generator, GenomeLength);
-            factory = new BeetleBotFactory(genomeProducer, Positioning);
+            map = new Coordinates(60, 40);
+            cells = new byte[map.X, map.Y];
+            beetleBots = ImmutableList<BeetleBot>.Empty;
+            cellSize = new Point(control.Size.Width / map.X, control.Size.Height / map.Y);
+            genomeProducer = new GenomeProducer(generator, GenomeLength, 1);
+            positionProvider = new PositionProvider(obstacles, map);
+            factory = new BeetleBotFactory(positionProvider, genomeProducer);
+
+            Epoch = 0;
+            Scene = new Scene(this);
+            BeetleBotMessage = new BeetleBotSubject();
 
             control.PointerEntered += OnPointerEntered;
             control.PointerExited += OnPointerExited;
             control.PointerPressed += OnPointerPressed;
+            control.PointerReleased += OnPointerReleased;
             control.PointerMoved += OnPointerMoved;
 
             subscription = BeetleBotMessage.Subscribe(new BeetleBotObserver(this));
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         public void Shutdown()
         {
             control.PointerEntered -= OnPointerEntered;
             control.PointerExited -= OnPointerExited;
             control.PointerPressed -= OnPointerPressed;
+            control.PointerReleased -= OnPointerReleased;
             control.PointerMoved -= OnPointerMoved;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="reason"></param>
+        /// <returns></returns>
         public Task InitializeAsync(CanvasCreateResourcesReason reason)
         {
-            var landscapeGrid = new LandscapeGrid(control.Size, new Size(20.0d, 20.0d), Colors.LightGray);
+            landscape = new LandscapeGrid(control.Size, new Size(20.0d, 20.0d), Colors.LightGray);
 
-            Scene.Children.Add(landscapeGrid);
+            Scene.Children.Add(landscape);
 
-            for(var y = 0; y < 60; y++)
+            foreach (var position in obstacles)
             {
-                cells[0, y] = Byte.MaxValue;
-                cells[39, y] = Byte.MaxValue;
+                cells[position.X, position.Y] = Wall;
             }
 
-            for(var x = 1; x < 39; x++)
+            /*var genomes = new List<IGenome>(AlphaBotsCount);
+
+            for(var index = 0; index < AlphaBotsCount; index++)
             {
-                cells[x, 0] = Byte.MaxValue;
-                cells[x, 59] = Byte.MaxValue;
+                genomes.Add(genomeProducer.CreateGenome());
             }
 
-            /*for (var primary = 0; primary < PrimaryBotsCount; primary++)
-            {
-                var primaryBot = factory.CreateBeetleBot();
-
-            beetleBots = beetleBots.Add(beetleBot);
-            Scene.Children.Add(beetleBot);
-
-                for (var index = 0; index < NestedBotsCount; index++)
-                {
-                    var nestedBot = factory.CreateBeetleBot(primaryBot.Genome);
-
-            beetleBots = beetleBots.Add(beetleBot);
-            Scene.Children.Add(beetleBot);
-                }
-            }*/
-
-            var bot = factory.CreateBeetleBot();
-
-            beetleBots = beetleBots.Add(bot);
-            Scene.Children.Add(bot);
+            StartEpoch(genomes);*/
 
             return Scene.CreateResourcesAsync(control, reason);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="elapsed"></param>
         public void Update(TimeSpan elapsed)
         {
             Scene.Update(elapsed);
         }
 
-        public bool IsFreeCell(Coordinates coordinates)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="coordinates"></param>
+        /// <returns></returns>
+        public bool IsOccupied(Coordinates coordinates)
         {
-            return 0 == cells[coordinates.Y, coordinates.X];
+            return CheckCellValue(coordinates, 1);
         }
 
-        public bool IsObstacleInCell(Coordinates coordinates)
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="coordinates"></param>
+        /// <returns></returns>
+        public bool IsObstacle(Coordinates coordinates)
         {
-            return Byte.MaxValue == cells[coordinates.Y, coordinates.X];
+            return CheckCellValue(coordinates, Byte.MaxValue);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="coordinates"></param>
+        /// <returns></returns>
+        public bool IsFood(Coordinates coordinates, out float amount)
+        {
+            amount = 0.0f;
+
+            if (0 > coordinates.X || coordinates.X >= map.X)
+            {
+                return false;
+            }
+
+            if (0 > coordinates.Y || coordinates.Y >= map.Y)
+            {
+                return false;
+            }
+
+            var value = cells[coordinates.X, coordinates.Y];
+
+            if (0 < value && (Occupied != value && Wall != value))
+            {
+                amount = (float)(value) / (Byte.MaxValue - 2);
+                return true;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="position"></param>
+        /// <returns></returns>
+        public Coordinates GetCoordinates(Vector2 position)
+        {
+            var x = Convert.ToByte(position.X / cellSize.X);
+            var y = Convert.ToByte(position.Y / cellSize.Y);
+
+            return new Coordinates(x, y);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="coordinates"></param>
+        /// <returns></returns>
+        public Vector2 GetPosition(Coordinates coordinates)
+        {
+            var x = cellSize.X * 0.5d;
+            var y = cellSize.Y * 0.5d;
+
+            if (0 < coordinates.X)
+            {
+                x += (cellSize.X * coordinates.X);
+            }
+
+            if (0 < coordinates.Y)
+            {
+                y += (cellSize.Y * coordinates.Y);
+            }
+
+            return new Vector2((float)x, (float)y);
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private IEnumerable<IGenome> StopEpoch()
+        {
+            var genomes = new List<IGenome>();
+
+            while (false == beetleBots.IsEmpty)
+            {
+                var bot = beetleBots[0];
+
+                RemoveBeetBot(bot);
+
+                genomes.Add(bot.Genome);
+            }
+
+            return genomes;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private void StartEpoch(IEnumerable<IGenome> genomes)
+        {
+            const int mutations = 1;
+
+            foreach (var genome in genomes)
+            {
+                var alpha = factory.CreateBeetleBot(genome);
+
+                beetleBots = beetleBots.Add(alpha);
+                Scene.Children.Add(alpha);
+
+                for (var count = 0; count < (NestedBotsCount - mutations); count++)
+                {
+                    var child = factory.CreateBeetleBot(alpha.Genome);
+
+                    beetleBots = beetleBots.Add(child);
+                    Scene.Children.Add(child);
+                }
+
+                for(var count = 0; count < mutations; count++)
+                {
+                    var mutatedGenome = genomeProducer.MutateGenome(alpha.Genome);
+                    var child = factory.CreateBeetleBot(mutatedGenome);
+
+                    beetleBots = beetleBots.Add(child);
+                    Scene.Children.Add(child);
+                }   
+            }
+        }
+
+        private void RemoveBeetBot(BeetleBot beetleBot)
+        {
+            beetleBots = beetleBots.Remove(beetleBot);
+            Scene.Children.Remove(beetleBot);
+
+            if (Occupied == cells[beetleBot.Coordinates.X, beetleBot.Coordinates.Y])
+            {
+                cells[beetleBot.Coordinates.X, beetleBot.Coordinates.Y] = Free;
+            }
         }
 
         private void DoBeetleBotDies(BeetleBot beetleBot)
         {
-            beetleBots = beetleBots.Remove(beetleBot);
+            RemoveBeetBot(beetleBot);
 
-            if (1 == cells[beetleBot.Coordinates.Y, beetleBot.Coordinates.X])
+            if (8 == beetleBots.Count)
             {
-                cells[beetleBot.Coordinates.Y, beetleBot.Coordinates.X] = 0;
+                var genomes = StopEpoch();
+
+                Epoch++;
+
+                StartEpoch(genomes);
             }
         }
 
@@ -149,9 +304,9 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         {
             if (null != origin)
             {
-                if (1 == cells[origin.Y, origin.X])
+                if (Occupied == cells[origin.X, origin.Y])
                 {
-                    cells[origin.Y, origin.X] = 0;
+                    cells[origin.X, origin.Y] = Free;
                 }
             }
 
@@ -160,23 +315,88 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
                 return;
             }
 
-            cells[destination.Y, destination.X] = 1;
+            cells[destination.X, destination.Y] = Occupied;
+        }
+
+        private bool CheckCellValue(Coordinates coordinates, byte value)
+        {
+            if (0 > coordinates.X || coordinates.X >= map.X)
+            {
+                return false;
+            }
+
+            if (0 > coordinates.Y || coordinates.Y >= map.Y)
+            {
+                return false;
+            }
+
+            return value == cells[coordinates.X, coordinates.Y];
         }
 
         private void OnPointerMoved(object sender, PointerRoutedEventArgs e)
         {
+            if (PointerDeviceType.Mouse != e.Pointer.PointerDeviceType)
+            {
+                return;
+            }
+
+            var point = e.GetCurrentPoint((UIElement)sender);
+
+            landscape.Cursor = GetCoordinates(point.Position.ToVector2());
+
+            if (point.Properties.IsLeftButtonPressed)
+            {
+                MarkCell(landscape.Cursor, VirtualKeyModifiers.Shift == e.KeyModifiers);
+            }
         }
 
         private void OnPointerEntered(object sender, PointerRoutedEventArgs e)
         {
+            var point = e.GetCurrentPoint((UIElement)sender);
+            landscape.Cursor = GetCoordinates(point.Position.ToVector2());
         }
 
         private void OnPointerExited(object sender, PointerRoutedEventArgs e)
         {
+            landscape.Cursor = null;
         }
 
         private void OnPointerPressed(object sender, PointerRoutedEventArgs e)
         {
+            if (PointerDeviceType.Mouse == e.Pointer.PointerDeviceType)
+            {
+                var point = e.GetCurrentPoint((UIElement)sender);
+
+                if (point.Properties.IsLeftButtonPressed)
+                {
+                    var cursor = GetCoordinates(point.Position.ToVector2());
+
+                    MarkCell(cursor, VirtualKeyModifiers.Shift == e.KeyModifiers);
+                }
+            }
+        }
+
+        private void OnPointerReleased(object sender, PointerRoutedEventArgs e)
+        {
+        }
+
+        private void MarkCell(Coordinates coordinates, bool forceFood)
+        {
+            var value = cells[coordinates.X, coordinates.Y];
+
+            if (Free == value)
+            {
+                cells[coordinates.X, coordinates.Y] = forceFood ? Convert.ToByte(Byte.MaxValue - 2) : Wall;
+            }
+            else
+            {
+                cells[coordinates.X, coordinates.Y] = Free;
+            }
+        }
+
+        public void Stop()
+        {
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -314,6 +534,53 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             public void Dispose()
             {
                 action.Invoke(arg);
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private class PositionProvider : ICreatePositionProvider
+        {
+            private readonly IList<Coordinates> free;
+            private readonly Random random;
+
+            public PositionProvider(IEnumerable<Coordinates> obstacles, Coordinates map)
+            {
+                random = new Random();
+                free = new List<Coordinates>();
+
+                var occupied = new List<Coordinates>(obstacles);
+
+                for (var y = 0; y < map.Y; y++)
+                {
+                    for (var x = 0; x < map.X; x++)
+                    {
+                        var position = new Coordinates(x, y);
+
+                        if (occupied.Contains(position))
+                        {
+                            continue;
+                        }
+
+                        free.Add(position);
+                    }
+                }
+            }
+
+            public Coordinates CreatePosition()
+            {
+                if (0 == free.Count)
+                {
+                    throw new Exception();
+                }
+
+                var index = random.Next(free.Count);
+                var position = free[index];
+
+                free.RemoveAt(index);
+
+                return position;
             }
         }
     }

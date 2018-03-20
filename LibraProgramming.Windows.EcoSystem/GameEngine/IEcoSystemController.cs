@@ -1,5 +1,6 @@
 ﻿using Microsoft.Graphics.Canvas.UI;
 using System;
+using System.Numerics;
 using System.Threading.Tasks;
 
 namespace LibraProgramming.Windows.EcoSystem.GameEngine
@@ -28,14 +29,6 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         /// <summary>
         /// 
         /// </summary>
-        IPositioningSystem Positioning
-        {
-            get;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
         /// <param name="reason"></param>
         /// <returns></returns>
         Task InitializeAsync(CanvasCreateResourcesReason reason);
@@ -54,15 +47,41 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         /// <summary>
         /// 
         /// </summary>
-        /// <param name="coordinates"></param>
-        /// <returns></returns>
-        bool IsFreeCell(Coordinates coordinates);
+        void Stop();
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="coordinates"></param>
         /// <returns></returns>
-        bool IsObstacleInCell(Coordinates coordinates);
+        bool IsOccupied(Coordinates coordinates);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="coordinates"></param>
+        /// <returns></returns>
+        bool IsObstacle(Coordinates coordinates);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="coordinates"></param>
+        /// <returns></returns>
+        bool IsFood(Coordinates coordinates, out float amount);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="coordinates"></param>
+        /// <returns></returns>
+        Vector2 GetPosition(Coordinates coordinates);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="position"></param>
+        /// <returns></returns>
+        Coordinates GetCoordinates(Vector2 position);
     }
 }

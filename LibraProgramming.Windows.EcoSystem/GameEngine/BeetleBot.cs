@@ -109,10 +109,23 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             session.DrawLine(Position, end, Colors.LightGray);
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="elapsed"></param>
+        public override void Update(TimeSpan elapsed)
+        {
+            var left = Lifespan - elapsed;
+
+            Lifespan = (TimeSpan.Zero > left) ? TimeSpan.Zero : left;
+
+            base.Update(elapsed);
+        }
+
         protected override void DoParentAdded()
         {
             canFireEvents = true;
-            Position = Controller.Positioning.GetPosition(Coordinates);
+            Position = Controller.GetPosition(Coordinates);
             State = new StartState();
             DoMove(new BeetleBotMoveMessage(this, null, Coordinates));
         }
@@ -173,6 +186,11 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
             protected ISceneNodeState GetNextState()
             {
+                if (TimeSpan.Zero == Node.Lifespan)
+                {
+                    return new DieState();
+                }
+
                 var moves = 10;
 
                 while (0 < moves--)
@@ -237,7 +255,7 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         }
 
         /// <summary>
-        /// 
+        /// Rotate and move state for the <see cref="BeetleBot" /> class.
         /// </summary>
         private class RotateAndMoveState : GenomeState
         {
@@ -248,8 +266,17 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
             private readonly MovingDirection direction;
 
-            private float rotation;
-            private int step;
+            protected float Rotation
+            {
+                get;
+                private set;
+            }
+
+            protected int Step
+            {
+                get;
+                private set;
+            }
 
             protected Vector2 Origin
             {
@@ -272,7 +299,7 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             protected Coordinates Coordinates
             {
                 get;
-                set;
+                private set;
             }
 
             public RotateAndMoveState(MovingDirection direction, int ip)
@@ -283,7 +310,7 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
             public override void Update(TimeSpan elapsed)
             {
-                switch (step)
+                switch (Step)
                 {
                     // initiate
                     case 0:
@@ -294,11 +321,11 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
                         if (Node.Coordinates != Coordinates && CanMoveTo(Coordinates))
                         {
-                            step++;
+                            Step++;
                         }
                         else
                         {
-                            step = 4;
+                            Step = 4;
                         }
 
                         break;
@@ -307,21 +334,21 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
                     // calculate rotation direction
                     case 1:
                     {
-                        if(RotationEpsilon >= Math.Abs(Node.Angle - Angle))
+                        if (RotationEpsilon >= Math.Abs(Node.Angle - Angle))
                         {
-                            step = 3;
+                            Step = 3;
                             break;
                         }
                         else if (Node.Angle > Angle)
                         {
-                            rotation = -RotationStep;
+                            Rotation = -RotationStep;
                         }
                         else
                         {
-                            rotation = RotationStep;
+                            Rotation = RotationStep;
                         }
 
-                        step++;
+                        Step++;
 
                         break;
                     }
@@ -329,11 +356,11 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
                     // rotate
                     case 2:
                     {
-                        var angle = NormalizeAngle(Node.Angle + rotation);
+                        var angle = NormalizeAngle(Node.Angle + Rotation);
 
                         if (RotationEpsilon >= Math.Abs(Angle - angle))
                         {
-                            step++;
+                            Step++;
                             Node.Angle = Angle;
                         }
                         else
@@ -349,7 +376,7 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
                     {
                         if (DistanceEpsilon >= Vector2.Distance(Node.Position, Destination))
                         {
-                            step++;
+                            Step++;
                             Node.Position = Destination;
                             Node.Coordinates = Coordinates;
                         }
@@ -476,13 +503,12 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
             protected Vector2 GetPosition(Coordinates coordinates)
             {
-                var positioningSystem = Node.Controller.Positioning;
-                return positioningSystem.GetPosition(coordinates);
+                return Node.Controller.GetPosition(coordinates);
             }
 
             protected bool CanMoveTo(Coordinates coordinates)
             {
-                return Node.Controller.IsFreeCell(coordinates) && false == Node.Controller.IsObstacleInCell(coordinates);
+                return false == (Node.Controller.IsObstacle(coordinates) || Node.Controller.IsOccupied(coordinates));
             }
 
             private static float NormalizeAngle(float angle)
@@ -501,9 +527,25 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             {
             }
 
+            protected override void DoComplete()
+            {
+                if (Node.Controller.IsFood(Node.Coordinates, out var amount))
+                {
+                    ;
+                }
+
+                Node.State = GetNextState();
+            }
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private class DieState : SceneNodeState<BeetleBot>
+        {
             public override void Update(TimeSpan elapsed)
             {
-                base.Update(elapsed);
+                Node.DoDie(new BeetleBotDiesMessage(Node));
             }
         }
     }

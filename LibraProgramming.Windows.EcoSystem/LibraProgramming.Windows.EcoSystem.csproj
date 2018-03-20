@@ -130,7 +130,7 @@
     <Compile Include="GameEngine\IGenome.cs" />
     <Compile Include="GameEngine\IGenomeProducer.cs" />
     <Compile Include="GameEngine\IOpCodeGenerator.cs" />
-    <Compile Include="GameEngine\IPositioningSystem.cs" />
+    <Compile Include="GameEngine\ICreatePositionProvider.cs" />
     <Compile Include="GameEngine\IScene.cs" />
     <Compile Include="GameEngine\ISceneNode.cs" />
     <Compile Include="GameEngine\ISceneNodeState.cs" />
@@ -139,7 +139,6 @@
     <Compile Include="GameEngine\NodeState.cs" />
     <Compile Include="GameEngine\OpCodeGenerator.cs" />
     <Compile Include="GameEngine\Coordinates.cs" />
-    <Compile Include="GameEngine\PositioningSystem.cs" />
     <Compile Include="GameEngine\Scene.cs" />
     <Compile Include="GameEngine\SceneNode.Collection.cs" />
     <Compile Include="GameEngine\SceneNode.cs" />

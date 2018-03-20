@@ -6,6 +6,8 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
     {
         private readonly byte[] opcodes;
 
+        public int Length => opcodes.Length;
+
         public byte this[int index]
         {
             get
@@ -35,9 +37,23 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             }
         }
 
-        public Genome(int cellCount)
+        public Genome(int length)
         {
-            opcodes = new byte[cellCount];
+            opcodes = new byte[length];
+        }
+
+        public Genome(IGenome genome)
+            : this(genome.Length)
+        {
+            for(var index = 0; index < genome.Length; index++)
+            {
+                opcodes[index] = genome[index];
+            }
+        }
+
+        public IGenome Clone()
+        {
+            return new Genome(this);
         }
     }
 }

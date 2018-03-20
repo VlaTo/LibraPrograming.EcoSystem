@@ -8,17 +8,17 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
     internal sealed class BeetleBotFactory : IBeetleBotFactory
     {
         private readonly IGenomeProducer genomeProducer;
-        private readonly IPositioningSystem positioningSystem;
+        private readonly ICreatePositionProvider positionProvider;
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="genomeProducer"></param>
         /// <param name="positioningSystem"></param>
-        public BeetleBotFactory(IGenomeProducer genomeProducer, IPositioningSystem positioningSystem)
+        public BeetleBotFactory(ICreatePositionProvider positionProvider, IGenomeProducer genomeProducer)
         {
+            this.positionProvider = positionProvider;
             this.genomeProducer = genomeProducer;
-            this.positioningSystem = positioningSystem;
         }
 
         /// <summary>
@@ -38,7 +38,7 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         /// <returns></returns>
         public BeetleBot CreateBeetleBot(IGenome genome)
         {
-            var origin = positioningSystem.GetRandomCoordinates();
+            var origin = positionProvider.CreatePosition();
             var beetleBot = new BeetleBot(origin, genome, TimeSpan.FromSeconds(10.0d));
 
             return beetleBot;
