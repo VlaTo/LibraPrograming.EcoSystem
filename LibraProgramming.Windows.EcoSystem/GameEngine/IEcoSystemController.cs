@@ -29,6 +29,14 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         /// <summary>
         /// 
         /// </summary>
+        ILand Land
+        {
+            get;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
         /// <param name="reason"></param>
         /// <returns></returns>
         Task InitializeAsync(CanvasCreateResourcesReason reason);
@@ -48,27 +56,6 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         /// 
         /// </summary>
         void Stop();
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="coordinates"></param>
-        /// <returns></returns>
-        bool IsOccupied(Coordinates coordinates);
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="coordinates"></param>
-        /// <returns></returns>
-        bool IsObstacle(Coordinates coordinates);
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="coordinates"></param>
-        /// <returns></returns>
-        bool IsFood(Coordinates coordinates, out float amount);
 
         /// <summary>
         /// 

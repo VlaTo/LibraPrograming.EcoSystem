@@ -122,6 +122,7 @@
     <Compile Include="GameEngine\BeetleBot.cs" />
     <Compile Include="GameEngine\BeetleBotFactory.cs" />
     <Compile Include="GameEngine\BeetleBotMessage.cs" />
+    <Compile Include="GameEngine\CellType.cs" />
     <Compile Include="GameEngine\EcoSystemController.cs" />
     <Compile Include="GameEngine\Genome.cs" />
     <Compile Include="GameEngine\GenomeProducer.cs" />
@@ -129,13 +130,17 @@
     <Compile Include="GameEngine\IEcoSystemController.cs" />
     <Compile Include="GameEngine\IGenome.cs" />
     <Compile Include="GameEngine\IGenomeProducer.cs" />
+    <Compile Include="GameEngine\ILand.cs" />
     <Compile Include="GameEngine\IOpCodeGenerator.cs" />
     <Compile Include="GameEngine\ICreatePositionProvider.cs" />
     <Compile Include="GameEngine\IScene.cs" />
     <Compile Include="GameEngine\ISceneNode.cs" />
     <Compile Include="GameEngine\ISceneNodeState.cs" />
     <Compile Include="GameEngine\ISubject.cs" />
+    <Compile Include="GameEngine\EcoSystemController.Land.cs" />
     <Compile Include="GameEngine\LandscapeGrid.cs" />
+    <Compile Include="GameEngine\MapSize.cs" />
+    <Compile Include="GameEngine\Mutation.cs" />
     <Compile Include="GameEngine\NodeState.cs" />
     <Compile Include="GameEngine\OpCodeGenerator.cs" />
     <Compile Include="GameEngine\Coordinates.cs" />

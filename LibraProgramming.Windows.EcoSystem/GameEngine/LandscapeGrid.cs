@@ -56,19 +56,38 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
                 for (var x = 0; x < 60; x++)
                 {
                     var coordinates = new Coordinates(x, y);
+                    var ct = CellType.Free;
                     Color brush = Colors.Transparent;
 
-                    if (Controller.IsObstacle(coordinates))
+                    switch (Controller.Land. GetCellType(coordinates))
                     {
-                        brush = Colors.SlateGray;
-                    }
-                    /*else if (Controller.IsOccupied(coordinates))
-                    {
-                        brush = Colors.Gray;
-                    }*/
-                    else if (Controller.IsFood(coordinates, out var amount))
-                    {
-                        brush = Colors.LawnGreen;
+                        case CellType.Free:
+                        {
+                            break;
+                        }
+
+                        case CellType.Occupied:
+                        {
+                            break;
+                        }
+
+                        case CellType.Food:
+                        {
+                            brush = Colors.DarkGreen;
+                            break;
+                        }
+
+                        case CellType.Poison:
+                        {
+                            brush = Colors.DarkRed;
+                            break;
+                        }
+
+                        case CellType.Wall:
+                        {
+                            brush = Colors.SlateGray;
+                            break;
+                        }
                     }
 
                     var point = new Point(x * dx, y * dy);

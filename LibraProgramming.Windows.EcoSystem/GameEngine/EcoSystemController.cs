@@ -18,14 +18,11 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
     /// <summary>
     /// 
     /// </summary>
-    public sealed class EcoSystemController : IEcoSystemController
+    public sealed partial class EcoSystemController : IEcoSystemController
     {
         private const int GenomeLength = 64;
         private const int AlphaBotsCount = 8;
         private const int NestedBotsCount = 8;
-        private const byte Wall = Byte.MaxValue;
-        private const byte Occupied = Byte.MaxValue - 1;
-        private const byte Free = Byte.MinValue;
 
         private readonly CanvasAnimatedControl control;
         private readonly IOpCodeGenerator generator;
@@ -40,7 +37,7 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         private LandscapeGrid landscape;
         private ImmutableList<BeetleBot> beetleBots;
         private IDisposable subscription;
-        private byte[,] cells;
+        private CellType[,] cells;
 
         public IScene Scene
         {
@@ -49,6 +46,11 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         }
 
         public ISubject<BeetleBotMessage> BeetleBotMessage
+        {
+            get;
+        }
+
+        public ILand Land
         {
             get;
         }
@@ -67,8 +69,6 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
             random = new Random();
             generator = new OpCodeGenerator();
-            map = new Coordinates(60, 40);
-            cells = new byte[map.X, map.Y];
             beetleBots = ImmutableList<BeetleBot>.Empty;
             cellSize = new Point(control.Size.Width / map.X, control.Size.Height / map.Y);
             genomeProducer = new GenomeProducer(generator, GenomeLength, 1);
@@ -78,6 +78,7 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             Epoch = 0;
             Scene = new Scene(this);
             BeetleBotMessage = new BeetleBotSubject();
+            Land = new Landscape(this, new MapSize(60, 40));
 
             control.PointerEntered += OnPointerEntered;
             control.PointerExited += OnPointerExited;
@@ -113,17 +114,17 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
             foreach (var position in obstacles)
             {
-                cells[position.X, position.Y] = Wall;
+                cells[position.X, position.Y] = CellType.Free;
             }
 
-            /*var genomes = new List<IGenome>(AlphaBotsCount);
+            var genomes = new List<IGenome>(AlphaBotsCount);
 
             for(var index = 0; index < AlphaBotsCount; index++)
             {
                 genomes.Add(genomeProducer.CreateGenome());
             }
 
-            StartEpoch(genomes);*/
+            StartEpoch(genomes);
 
             return Scene.CreateResourcesAsync(control, reason);
         }
@@ -135,56 +136,6 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         public void Update(TimeSpan elapsed)
         {
             Scene.Update(elapsed);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="coordinates"></param>
-        /// <returns></returns>
-        public bool IsOccupied(Coordinates coordinates)
-        {
-            return CheckCellValue(coordinates, 1);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="coordinates"></param>
-        /// <returns></returns>
-        public bool IsObstacle(Coordinates coordinates)
-        {
-            return CheckCellValue(coordinates, Byte.MaxValue);
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="coordinates"></param>
-        /// <returns></returns>
-        public bool IsFood(Coordinates coordinates, out float amount)
-        {
-            amount = 0.0f;
-
-            if (0 > coordinates.X || coordinates.X >= map.X)
-            {
-                return false;
-            }
-
-            if (0 > coordinates.Y || coordinates.Y >= map.Y)
-            {
-                return false;
-            }
-
-            var value = cells[coordinates.X, coordinates.Y];
-
-            if (0 < value && (Occupied != value && Wall != value))
-            {
-                amount = (float)(value) / (Byte.MaxValue - 2);
-                return true;
-            }
-
-            return false;
         }
 
         /// <summary>
@@ -280,9 +231,9 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             beetleBots = beetleBots.Remove(beetleBot);
             Scene.Children.Remove(beetleBot);
 
-            if (Occupied == cells[beetleBot.Coordinates.X, beetleBot.Coordinates.Y])
+            if (CellType.Occupied == cells[beetleBot.Coordinates.X, beetleBot.Coordinates.Y])
             {
-                cells[beetleBot.Coordinates.X, beetleBot.Coordinates.Y] = Free;
+                cells[beetleBot.Coordinates.X, beetleBot.Coordinates.Y] = CellType.Free;
             }
         }
 
@@ -290,7 +241,7 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         {
             RemoveBeetBot(beetleBot);
 
-            if (8 == beetleBots.Count)
+            if (AlphaBotsCount == beetleBots.Count)
             {
                 var genomes = StopEpoch();
 
@@ -304,9 +255,9 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         {
             if (null != origin)
             {
-                if (Occupied == cells[origin.X, origin.Y])
+                if (CellType.Occupied == cells[origin.X, origin.Y])
                 {
-                    cells[origin.X, origin.Y] = Free;
+                    cells[origin.X, origin.Y] = CellType.Free;
                 }
             }
 
@@ -315,22 +266,7 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
                 return;
             }
 
-            cells[destination.X, destination.Y] = Occupied;
-        }
-
-        private bool CheckCellValue(Coordinates coordinates, byte value)
-        {
-            if (0 > coordinates.X || coordinates.X >= map.X)
-            {
-                return false;
-            }
-
-            if (0 > coordinates.Y || coordinates.Y >= map.Y)
-            {
-                return false;
-            }
-
-            return value == cells[coordinates.X, coordinates.Y];
+            cells[destination.X, destination.Y] = CellType.Occupied;
         }
 
         private void OnPointerMoved(object sender, PointerRoutedEventArgs e)
@@ -384,13 +320,13 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         {
             var value = cells[coordinates.X, coordinates.Y];
 
-            if (Free == value)
+            if (CellType.Free == value)
             {
-                cells[coordinates.X, coordinates.Y] = forceFood ? Convert.ToByte(Byte.MaxValue - 2) : Wall;
+                cells[coordinates.X, coordinates.Y] = forceFood ? CellType.Food : CellType.Wall;
             }
             else
             {
-                cells[coordinates.X, coordinates.Y] = Free;
+                cells[coordinates.X, coordinates.Y] = CellType.Free;
             }
         }
 

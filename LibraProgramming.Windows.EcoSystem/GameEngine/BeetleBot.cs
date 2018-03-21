@@ -11,8 +11,8 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
     /// </summary>
     public class BeetleBot : StateAwareSceneNode<BeetleBot>
     {
-        private Coordinates coordinates;
         private bool canFireEvents;
+        private Coordinates coordinates;
 
         /// <summary>
         /// 
@@ -54,11 +54,11 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
                     return;
                 }
 
-                var origin = coordinates;
+                var temp = coordinates;
 
                 coordinates = value;
 
-                DoMove(new BeetleBotMoveMessage(this, origin, coordinates));
+                DoMove(temp, true);
             }
         }
 
@@ -124,31 +124,24 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
         protected override void DoParentAdded()
         {
-            canFireEvents = true;
             Position = Controller.GetPosition(Coordinates);
             State = new StartState();
-            DoMove(new BeetleBotMoveMessage(this, null, Coordinates));
+            DoMove(null, true);
         }
 
         protected override void DoParentRemoved()
         {
-            canFireEvents = false;
+            DoMove(Coordinates, false);
         }
 
-        private void DoDie(BeetleBotDiesMessage message)
+        private void DoMove(Coordinates coordinates, bool occupie)
         {
-            if (canFireEvents)
+            if (null == Controller)
             {
-                Controller.BeetleBotMessage.OnNext(message);
+                return;
             }
-        }
 
-        private void DoMove(BeetleBotMoveMessage message)
-        {
-            if (canFireEvents)
-            {
-                Controller.BeetleBotMessage.OnNext(message);
-            }
+            Controller.Land[coordinates] = occupie ? this : null;
         }
 
         /// <summary>
@@ -378,7 +371,7 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
                         {
                             Step++;
                             Node.Position = Destination;
-                            Node.Coordinates = Coordinates;
+                            Node.Move(Coordinates);
                         }
                         else
                         {
@@ -508,7 +501,8 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
             protected bool CanMoveTo(Coordinates coordinates)
             {
-                return false == (Node.Controller.IsObstacle(coordinates) || Node.Controller.IsOccupied(coordinates));
+                var value = Node.Controller.GetCellType(coordinates) & CellType.OccupationMask;
+                return false == (CellType.Wall == value || CellType.Occupied == value);
             }
 
             private static float NormalizeAngle(float angle)
@@ -529,12 +523,24 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
             protected override void DoComplete()
             {
-                if (Node.Controller.IsFood(Node.Coordinates, out var amount))
+                var value = Node.Controller.EatFood(Node.Coordinates) & CellType.AttributeMask;
+
+                switch (value)
                 {
-                    ;
+                    case CellType.Food:
+                    {
+                        Node.Lifespan += TimeSpan.FromSeconds(10.0d);
+                        break;
+                    }
+
+                    case CellType.Poison:
+                    {
+                        Node.State = new DieState();
+                        return;
+                    }
                 }
 
-                Node.State = GetNextState();
+                base.DoComplete();
             }
         }
 
@@ -545,7 +551,7 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         {
             public override void Update(TimeSpan elapsed)
             {
-                Node.DoDie(new BeetleBotDiesMessage(Node));
+                Node.DoMove(Node.Coordinates, false);
             }
         }
     }

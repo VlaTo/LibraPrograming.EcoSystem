@@ -1,4 +1,6 @@
-﻿namespace LibraProgramming.Windows.EcoSystem.GameEngine
+﻿using System.Collections.Generic;
+
+namespace LibraProgramming.Windows.EcoSystem.GameEngine
 {
     /// <summary>
     /// 
@@ -9,6 +11,14 @@
         /// 
         /// </summary>
         int Length
+        {
+            get;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        IReadOnlyList<Mutation> Mutations
         {
             get;
         }
@@ -28,5 +38,12 @@
         /// </summary>
         /// <returns></returns>
         IGenome Clone();
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="index"></param>
+        /// <param name="opcode"></param>
+        void Replace(int index, byte opcode);
     }
 }

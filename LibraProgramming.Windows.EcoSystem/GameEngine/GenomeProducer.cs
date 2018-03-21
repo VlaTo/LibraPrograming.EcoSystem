@@ -54,12 +54,12 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
                 throw new ArgumentNullException(nameof(genome));
             }
 
-            var clone = new Genome(genome);
+            var clone = genome.Clone();
 
             for (var count = 0; count < mutationsCount; count++)
             {
                 var index = random.Next(clone.Length);
-                clone[index] = opCodeGenerator.NextOpCode();
+                clone.Replace(index, opCodeGenerator.NextOpCode());
             }
 
             return clone;
