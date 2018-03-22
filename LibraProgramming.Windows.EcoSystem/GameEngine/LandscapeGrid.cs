@@ -56,21 +56,16 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
                 for (var x = 0; x < 60; x++)
                 {
                     var coordinates = new Coordinates(x, y);
-                    var ct = CellType.Free;
-                    Color brush = Colors.Transparent;
 
-                    switch (Controller.Land. GetCellType(coordinates))
+                    if (false == Controller.IsOccupied(coordinates))
                     {
-                        case CellType.Free:
-                        {
-                            break;
-                        }
+                        continue;
+                    }
 
-                        case CellType.Occupied:
-                        {
-                            break;
-                        }
-
+                    var brush = Colors.Transparent;
+                    
+                    switch (Controller.GetAttribute(coordinates))
+                    {
                         case CellType.Food:
                         {
                             brush = Colors.DarkGreen;
@@ -99,7 +94,6 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
                     if (coordinates == cursor)
                     {
-
                         session.DrawRectangle(new Rect(point, cell), Colors.WhiteSmoke);
                     }
                 }

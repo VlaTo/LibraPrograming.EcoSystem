@@ -2,9 +2,7 @@
 
 namespace LibraProgramming.Windows.EcoSystem.GameEngine
 {
-    /// <summary>
-    /// 
-    /// </summary>
+    /// <inheritdoc />
     internal sealed class GenomeProducer : IGenomeProducer
     {
         private readonly IOpCodeGenerator opCodeGenerator;
@@ -26,10 +24,7 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             random = new Random();
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <returns></returns>
+        /// <inheritdoc />
         public IGenome CreateGenome()
         {
             var genome = new Genome(genomeLength);
@@ -42,11 +37,7 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             return genome;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="genome"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public IGenome MutateGenome(IGenome genome)
         {
             if (null == genome)

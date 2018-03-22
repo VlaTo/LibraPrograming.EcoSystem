@@ -12,13 +12,14 @@ using System.Numerics;
 using Windows.UI.Xaml;
 using Windows.System;
 using Windows.Devices.Input;
+using Microsoft.Graphics.Canvas.Effects;
 
 namespace LibraProgramming.Windows.EcoSystem.GameEngine
 {
     /// <summary>
     /// 
     /// </summary>
-    public sealed partial class EcoSystemController : IEcoSystemController
+    public sealed class EcoSystemController : IEcoSystemController
     {
         private const int GenomeLength = 64;
         private const int AlphaBotsCount = 8;
@@ -27,30 +28,16 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         private readonly CanvasAnimatedControl control;
         private readonly IOpCodeGenerator generator;
         private readonly IGenomeProducer genomeProducer;
-        private readonly ICreatePositionProvider positionProvider;
-        private readonly IBeetleBotFactory factory;
         private readonly IEnumerable<Coordinates> obstacles;
-        private readonly Point cellSize;
-        private readonly Coordinates map;
+        private readonly Size cellSize;
+        private readonly MapSize mapSize;
         private readonly Random random;
+        private readonly CellType[,] map;
 
-        private LandscapeGrid landscape;
-        private ImmutableList<BeetleBot> beetleBots;
-        private IDisposable subscription;
-        private CellType[,] cells;
+        private LandscapeGrid grid;
+        private ImmutableList<BeetleBot> bots;
 
         public IScene Scene
-        {
-            get;
-            private set;
-        }
-
-        public ISubject<BeetleBotMessage> BeetleBotMessage
-        {
-            get;
-        }
-
-        public ILand Land
         {
             get;
         }
@@ -62,31 +49,27 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         }
 
         [PrefferedConstructor]
-        public EcoSystemController(CanvasAnimatedControl control, IEnumerable<Coordinates> obstacles)
+        public EcoSystemController(CanvasAnimatedControl control, MapSize mapSize, IEnumerable<Coordinates> obstacles)
         {
             this.control = control;
             this.obstacles = obstacles;
+            this.mapSize = mapSize;
 
             random = new Random();
             generator = new OpCodeGenerator();
-            beetleBots = ImmutableList<BeetleBot>.Empty;
-            cellSize = new Point(control.Size.Width / map.X, control.Size.Height / map.Y);
+            bots = ImmutableList<BeetleBot>.Empty;
+            map = new CellType[mapSize.Width, mapSize.Height];
+            cellSize = new Size(control.Size.Width / mapSize.Width, control.Size.Height / mapSize.Height);
             genomeProducer = new GenomeProducer(generator, GenomeLength, 1);
-            positionProvider = new PositionProvider(obstacles, map);
-            factory = new BeetleBotFactory(positionProvider, genomeProducer);
 
             Epoch = 0;
             Scene = new Scene(this);
-            BeetleBotMessage = new BeetleBotSubject();
-            Land = new Landscape(this, new MapSize(60, 40));
 
             control.PointerEntered += OnPointerEntered;
             control.PointerExited += OnPointerExited;
             control.PointerPressed += OnPointerPressed;
             control.PointerReleased += OnPointerReleased;
             control.PointerMoved += OnPointerMoved;
-
-            subscription = BeetleBotMessage.Subscribe(new BeetleBotObserver(this));
         }
 
         /// <summary>
@@ -108,13 +91,13 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         /// <returns></returns>
         public Task InitializeAsync(CanvasCreateResourcesReason reason)
         {
-            landscape = new LandscapeGrid(control.Size, new Size(20.0d, 20.0d), Colors.LightGray);
+            grid = new LandscapeGrid(control.Size, new Size(20.0d, 20.0d), Colors.LightGray);
 
-            Scene.Children.Add(landscape);
+            Scene.Children.Add(grid);
 
             foreach (var position in obstacles)
             {
-                cells[position.X, position.Y] = CellType.Free;
+                map[position.X, position.Y] = (CellType.Occupied | CellType.Wall);
             }
 
             var genomes = new List<IGenome>(AlphaBotsCount);
@@ -145,8 +128,8 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         /// <returns></returns>
         public Coordinates GetCoordinates(Vector2 position)
         {
-            var x = Convert.ToByte(position.X / cellSize.X);
-            var y = Convert.ToByte(position.Y / cellSize.Y);
+            var x = Convert.ToByte(position.X / cellSize.Width);
+            var y = Convert.ToByte(position.Y / cellSize.Height);
 
             return new Coordinates(x, y);
         }
@@ -158,20 +141,83 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         /// <returns></returns>
         public Vector2 GetPosition(Coordinates coordinates)
         {
-            var x = cellSize.X * 0.5d;
-            var y = cellSize.Y * 0.5d;
+            var x = cellSize.Width * 0.5d;
+            var y = cellSize.Height * 0.5d;
 
             if (0 < coordinates.X)
             {
-                x += (cellSize.X * coordinates.X);
+                x += (cellSize.Width * coordinates.X);
             }
 
             if (0 < coordinates.Y)
             {
-                y += (cellSize.Y * coordinates.Y);
+                y += (cellSize.Height * coordinates.Y);
             }
 
             return new Vector2((float)x, (float)y);
+        }
+
+        /// <inheritdoc />
+        public void Occupy(Coordinates coordinates, bool occupy)
+        {
+            if (null == coordinates)
+            {
+                return;
+            }
+
+            if (occupy)
+            {
+                map[coordinates.X, coordinates.Y] |= CellType.Occupied;
+            }
+            else
+            {
+                map[coordinates.X, coordinates.Y] &= ~CellType.Occupied;
+            }
+        }
+
+        /// <inheritdoc />
+        public bool IsOccupied(Coordinates coordinates)
+        {
+            if (0 > coordinates.X || coordinates.X >= mapSize.Width)
+            {
+                return false;
+            }
+
+            if (0 > coordinates.Y || coordinates.Y >= mapSize.Height)
+            {
+                return false;
+            }
+
+            return CellType.Occupied == (map[coordinates.X, coordinates.Y] & CellType.OccupationMask);
+        }
+
+        /// <inheritdoc />
+        public CellType GetAttribute(Coordinates coordinates)
+        {
+            return map[coordinates.X, coordinates.Y] & CellType.AttributeMask;
+        }
+
+        /// <inheritdoc />
+        public bool Eat(Coordinates coordinates, out bool poisoned)
+        {
+            const CellType mask = CellType.AttributeMask & ~CellType.Wall;
+            var cell = map[coordinates.X, coordinates.Y] & mask;
+
+            map[coordinates.X, coordinates.Y] &= ~(CellType.Food | CellType.Poison);
+            poisoned = false;
+
+            if (CellType.Food == cell)
+            {
+                return true;
+            }
+
+            if (CellType.Poison == cell)
+            {
+                poisoned = true;
+                return true;
+            }
+
+            return false;
         }
 
         /// <summary>
@@ -181,9 +227,9 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         {
             var genomes = new List<IGenome>();
 
-            while (false == beetleBots.IsEmpty)
+            while (false == bots.IsEmpty)
             {
-                var bot = beetleBots[0];
+                var bot = bots[0];
 
                 RemoveBeetBot(bot);
 
@@ -200,18 +246,21 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         {
             const int mutations = 1;
 
+            var positionProvider = new PositionProvider(obstacles, mapSize);
+            var factory = new BeetleBotFactory(positionProvider, genomeProducer);
+
             foreach (var genome in genomes)
             {
                 var alpha = factory.CreateBeetleBot(genome);
 
-                beetleBots = beetleBots.Add(alpha);
+                bots = bots.Add(alpha);
                 Scene.Children.Add(alpha);
 
                 for (var count = 0; count < (NestedBotsCount - mutations); count++)
                 {
                     var child = factory.CreateBeetleBot(alpha.Genome);
 
-                    beetleBots = beetleBots.Add(child);
+                    bots = bots.Add(child);
                     Scene.Children.Add(child);
                 }
 
@@ -220,38 +269,42 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
                     var mutatedGenome = genomeProducer.MutateGenome(alpha.Genome);
                     var child = factory.CreateBeetleBot(mutatedGenome);
 
-                    beetleBots = beetleBots.Add(child);
+                    bots = bots.Add(child);
                     Scene.Children.Add(child);
                 }   
             }
         }
 
-        private void RemoveBeetBot(BeetleBot beetleBot)
+        private void RemoveBeetBot(BeetleBot bot)
         {
-            beetleBots = beetleBots.Remove(beetleBot);
-            Scene.Children.Remove(beetleBot);
+            bots = bots.Remove(bot);
+            Scene.Children.Remove(bot);
 
-            if (CellType.Occupied == cells[beetleBot.Coordinates.X, beetleBot.Coordinates.Y])
+            if (null == bot.Coordinates)
             {
-                cells[beetleBot.Coordinates.X, beetleBot.Coordinates.Y] = CellType.Free;
+                return;
             }
+
+            map[bot.Coordinates.X, bot.Coordinates.Y] &= CellType.AttributeMask;
         }
 
-        private void DoBeetleBotDies(BeetleBot beetleBot)
+        private void DoBeetleBotDies(BeetleBot bot)
         {
-            RemoveBeetBot(beetleBot);
+            RemoveBeetBot(bot);
 
-            if (AlphaBotsCount == beetleBots.Count)
+            if (AlphaBotsCount < bots.Count)
             {
-                var genomes = StopEpoch();
-
-                Epoch++;
-
-                StartEpoch(genomes);
+                return;
             }
+
+            var genomes = StopEpoch();
+
+            Epoch++;
+
+            StartEpoch(genomes);
         }
 
-        private void DoBeetleBotMoves(BeetleBot beetleBot, Coordinates origin, Coordinates destination)
+        /*private void DoBeetleBotMoves(BeetleBot bot, Coordinates origin, Coordinates destination)
         {
             if (null != origin)
             {
@@ -267,7 +320,7 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             }
 
             cells[destination.X, destination.Y] = CellType.Occupied;
-        }
+        }*/
 
         private void OnPointerMoved(object sender, PointerRoutedEventArgs e)
         {
@@ -278,23 +331,23 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
             var point = e.GetCurrentPoint((UIElement)sender);
 
-            landscape.Cursor = GetCoordinates(point.Position.ToVector2());
+            grid.Cursor = GetCoordinates(point.Position.ToVector2());
 
             if (point.Properties.IsLeftButtonPressed)
             {
-                MarkCell(landscape.Cursor, VirtualKeyModifiers.Shift == e.KeyModifiers);
+                MarkCell(grid.Cursor, VirtualKeyModifiers.Shift == e.KeyModifiers);
             }
         }
 
         private void OnPointerEntered(object sender, PointerRoutedEventArgs e)
         {
             var point = e.GetCurrentPoint((UIElement)sender);
-            landscape.Cursor = GetCoordinates(point.Position.ToVector2());
+            grid.Cursor = GetCoordinates(point.Position.ToVector2());
         }
 
         private void OnPointerExited(object sender, PointerRoutedEventArgs e)
         {
-            landscape.Cursor = null;
+            grid.Cursor = null;
         }
 
         private void OnPointerPressed(object sender, PointerRoutedEventArgs e)
@@ -318,15 +371,15 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
         private void MarkCell(Coordinates coordinates, bool forceFood)
         {
-            var value = cells[coordinates.X, coordinates.Y];
+            var value = map[coordinates.X, coordinates.Y];
 
             if (CellType.Free == value)
             {
-                cells[coordinates.X, coordinates.Y] = forceFood ? CellType.Food : CellType.Wall;
+                map[coordinates.X, coordinates.Y] = forceFood ? CellType.Food : CellType.Wall;
             }
             else
             {
-                cells[coordinates.X, coordinates.Y] = CellType.Free;
+                map[coordinates.X, coordinates.Y] = CellType.Free;
             }
         }
 
@@ -338,159 +391,21 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         /// <summary>
         /// 
         /// </summary>
-        private sealed class BeetleBotSubject : ISubject<BeetleBotMessage>
-        {
-            public ImmutableList<IObserver<BeetleBotMessage>> Observers
-            {
-                get;
-                private set;
-            }
-
-            public BeetleBotSubject()
-            {
-                Observers = ImmutableList<IObserver<BeetleBotMessage>>.Empty;
-            }
-
-            public IDisposable Subscribe(IObserver<BeetleBotMessage> observer)
-            {
-                if (null == observer)
-                {
-                    throw new ArgumentNullException();
-                }
-
-                if (false == Observers.Contains(observer))
-                {
-                    Observers = Observers.Add(observer);
-                }
-
-                return new Subscription<IObserver<BeetleBotMessage>>(observer, DoRemoveObserver);
-            }
-
-            public void OnNext(BeetleBotMessage value)
-            {
-                ForEach(observer => observer.OnNext(value));
-            }
-
-            public void OnCompleted()
-            {
-                ForEach(observer => observer.OnCompleted());
-            }
-
-            public void OnError(Exception error)
-            {
-                ForEach(observer => observer.OnError(error));
-            }
-
-            private void DoRemoveObserver(IObserver<BeetleBotMessage> observer)
-            {
-                if (false == Observers.Contains(observer))
-                {
-                    return;
-                }
-
-                Observers = Observers.Remove(observer);
-            }
-
-            private void ForEach(Action<IObserver<BeetleBotMessage>> action)
-            {
-                if (null == action)
-                {
-                    throw new ArgumentNullException(nameof(action));
-                }
-
-                foreach(var observer in Observers)
-                {
-                    action.Invoke(observer);
-                }
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        private class BeetleBotObserver : IObserver<BeetleBotMessage>
-        {
-            private readonly EcoSystemController controller;
-
-            public BeetleBotObserver(EcoSystemController controller)
-            {
-                this.controller = controller;
-            }
-
-            public void OnCompleted()
-            {
-                throw new NotImplementedException();
-            }
-
-            public void OnError(Exception error)
-            {
-                throw new NotImplementedException();
-            }
-
-            public void OnNext(BeetleBotMessage value)
-            {
-                switch (value.MessageType)
-                {
-                    case BeetleBotMessageType.Move:
-                    {
-                        var message = (BeetleBotMoveMessage)value;
-
-                        controller.DoBeetleBotMoves(message.BeetleBot, message.Origin, message.Destination);
-
-                        break;
-                    }
-
-                    case BeetleBotMessageType.Dies:
-                    {
-                        var message = (BeetleBotDiesMessage)value;
-
-                        controller.DoBeetleBotDies(message.BeetleBot);
-
-                        break;
-                    }
-                }
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <typeparam name="TArgument"></typeparam>
-        private sealed class Subscription<TArgument> : IDisposable
-        {
-            private readonly TArgument arg;
-            private readonly Action<TArgument> action;
-
-            public Subscription(TArgument arg, Action<TArgument> action)
-            {
-                this.arg = arg;
-                this.action = action;
-            }
-
-            public void Dispose()
-            {
-                action.Invoke(arg);
-            }
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
         private class PositionProvider : ICreatePositionProvider
         {
             private readonly IList<Coordinates> free;
             private readonly Random random;
 
-            public PositionProvider(IEnumerable<Coordinates> obstacles, Coordinates map)
+            public PositionProvider(IEnumerable<Coordinates> obstacles, MapSize mapSize)
             {
                 random = new Random();
                 free = new List<Coordinates>();
 
                 var occupied = new List<Coordinates>(obstacles);
 
-                for (var y = 0; y < map.Y; y++)
+                for (var y = 0; y < mapSize.Height; y++)
                 {
-                    for (var x = 0; x < map.X; x++)
+                    for (var x = 0; x < mapSize.Width; x++)
                     {
                         var position = new Coordinates(x, y);
 

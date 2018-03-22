@@ -21,22 +21,6 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         /// <summary>
         /// 
         /// </summary>
-        ISubject<BeetleBotMessage> BeetleBotMessage
-        {
-            get;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
-        ILand Land
-        {
-            get;
-        }
-
-        /// <summary>
-        /// 
-        /// </summary>
         /// <param name="reason"></param>
         /// <returns></returns>
         Task InitializeAsync(CanvasCreateResourcesReason reason);
@@ -70,5 +54,34 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         /// <param name="position"></param>
         /// <returns></returns>
         Coordinates GetCoordinates(Vector2 position);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="coordinates"></param>
+        /// <returns></returns>
+        CellType GetAttribute(Coordinates coordinates);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="coordinates"></param>
+        /// <param name="occupy"></param>
+        void Occupy(Coordinates coordinates, bool occupy);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="coordinates"></param>
+        /// <returns></returns>
+        bool IsOccupied(Coordinates coordinates);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="coordinates"></param>
+        /// <param name="poisoned"></param>
+        /// <returns></returns>
+        bool Eat(Coordinates coordinates, out bool poisoned);
     }
 }

@@ -34,13 +34,13 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         Poison = 8,
 
         /// <summary>
-        /// 
+        /// The occupation mask for the type <see cref="CellType" />.
         /// </summary>
-        OccupationMask = Free | Occupied | Wall,
+        OccupationMask = Free | Occupied,
 
         /// <summary>
-        /// 
+        /// The attribute mask for the type <see cref="CellType" />.
         /// </summary>
-        AttributeMask = Food | Poison
+        AttributeMask = Food | Poison | Wall
     }
 }

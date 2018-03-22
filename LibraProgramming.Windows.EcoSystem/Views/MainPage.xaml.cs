@@ -20,7 +20,7 @@ namespace LibraProgramming.Windows.EcoSystem.Views
         private void OnCanvasAnimatedControlCreateResources(ICanvasAnimatedControl sender, CanvasCreateResourcesEventArgs args)
         {
             var obstacles = GetObstacles();
-            controller = new EcoSystemController(sender as CanvasAnimatedControl, obstacles);
+            controller = new EcoSystemController(sender as CanvasAnimatedControl, new MapSize(60, 40), obstacles);
             args.TrackAsyncAction(controller.InitializeAsync(args.Reason).AsAsyncAction());
         }
 
