@@ -147,6 +147,9 @@
     <Compile Include="GameEngine\SceneNodeState.cs" />
     <Compile Include="GameEngine\StateAwareSceneNode.cs" />
     <Compile Include="GameEngine\UserPointer.cs" />
+    <Compile Include="ViewModels\MainPageViewModel.cs" />
+    <Compile Include="ViewModels\ViewModelBase.cs" />
+    <Compile Include="ViewModels\ViewModelLocator.cs" />
     <Compile Include="Views\HostPage.xaml.cs">
       <DependentUpon>HostPage.xaml</DependentUpon>
     </Compile>

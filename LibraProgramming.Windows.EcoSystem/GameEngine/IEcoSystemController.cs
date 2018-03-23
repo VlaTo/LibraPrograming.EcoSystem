@@ -83,5 +83,16 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         /// <param name="poisoned"></param>
         /// <returns></returns>
         bool Eat(Coordinates coordinates, out bool poisoned);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="bot"></param>
+        void DoBeetleBotDies(BeetleBot bot);
+
+        /// <summary>
+        /// 
+        /// </summary>
+        event EventHandler<EpochStartedEventArgs> EpochStarted;
     }
 }

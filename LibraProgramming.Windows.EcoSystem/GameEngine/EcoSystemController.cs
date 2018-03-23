@@ -6,16 +6,64 @@ using System.Threading.Tasks;
 using Windows.UI.Xaml.Input;
 using System.Collections.Immutable;
 using System.Collections.Generic;
+using System.Collections.ObjectModel;
+using System.Diagnostics;
 using Windows.Foundation;
 using Windows.UI;
 using System.Numerics;
 using Windows.UI.Xaml;
 using Windows.System;
 using Windows.Devices.Input;
-using Microsoft.Graphics.Canvas.Effects;
 
 namespace LibraProgramming.Windows.EcoSystem.GameEngine
 {
+    /// <summary>
+    /// 
+    /// </summary>
+    public class EpochEventArgs : EventArgs
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        public int Epoch
+        {
+            get;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="epoch"></param>
+        public EpochEventArgs(int epoch)
+        {
+            Epoch = epoch;
+        }
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
+    public sealed class EpochStartedEventArgs : EpochEventArgs
+    {
+        /// <summary>
+        /// 
+        /// </summary>
+        public IReadOnlyCollection<IGenome> Genomes
+        {
+            get;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="epoch"></param>
+        public EpochStartedEventArgs(int epoch, IReadOnlyCollection<IGenome> genomes)
+            : base(epoch)
+        {
+            Genomes = genomes;
+        }
+    }
+
     /// <summary>
     /// 
     /// </summary>
@@ -24,6 +72,8 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         private const int GenomeLength = 64;
         private const int AlphaBotsCount = 8;
         private const int NestedBotsCount = 8;
+        private const int FoodCount = 50;
+        private const int PoisonCount = 15;
 
         private readonly CanvasAnimatedControl control;
         private readonly IOpCodeGenerator generator;
@@ -31,12 +81,14 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         private readonly IEnumerable<Coordinates> obstacles;
         private readonly Size cellSize;
         private readonly MapSize mapSize;
-        private readonly Random random;
         private readonly CellType[,] map;
 
         private LandscapeGrid grid;
         private ImmutableList<BeetleBot> bots;
+        private int foodCount;
+        private int poisonCount;
 
+        /// <inheritdoc />
         public IScene Scene
         {
             get;
@@ -48,6 +100,9 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             private set;
         }
 
+        /// <inheritdoc />
+        public event EventHandler<EpochStartedEventArgs> EpochStarted;
+
         [PrefferedConstructor]
         public EcoSystemController(CanvasAnimatedControl control, MapSize mapSize, IEnumerable<Coordinates> obstacles)
         {
@@ -55,7 +110,6 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             this.obstacles = obstacles;
             this.mapSize = mapSize;
 
-            random = new Random();
             generator = new OpCodeGenerator();
             bots = ImmutableList<BeetleBot>.Empty;
             map = new CellType[mapSize.Width, mapSize.Height];
@@ -72,9 +126,7 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             control.PointerMoved += OnPointerMoved;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
+        /// <inheritdoc />
         public void Shutdown()
         {
             control.PointerEntered -= OnPointerEntered;
@@ -84,11 +136,7 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             control.PointerMoved -= OnPointerMoved;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="reason"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public Task InitializeAsync(CanvasCreateResourcesReason reason)
         {
             grid = new LandscapeGrid(control.Size, new Size(20.0d, 20.0d), Colors.LightGray);
@@ -112,20 +160,14 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             return Scene.CreateResourcesAsync(control, reason);
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="elapsed"></param>
+        /// <inheritdoc />
         public void Update(TimeSpan elapsed)
         {
+
             Scene.Update(elapsed);
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="position"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public Coordinates GetCoordinates(Vector2 position)
         {
             var x = Convert.ToByte(position.X / cellSize.Width);
@@ -134,11 +176,7 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             return new Coordinates(x, y);
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
-        /// <param name="coordinates"></param>
-        /// <returns></returns>
+        /// <inheritdoc />
         public Vector2 GetPosition(Coordinates coordinates)
         {
             var x = cellSize.Width * 0.5d;
@@ -208,21 +246,44 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
             if (CellType.Food == cell)
             {
+                --foodCount;
+
+                UpdateFoodAmount();
+
                 return true;
             }
 
             if (CellType.Poison == cell)
             {
                 poisoned = true;
+                --poisonCount;
+
+                UpdateFoodAmount();
+
                 return true;
             }
 
             return false;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
+        /// <inheritdoc />
+        public void DoBeetleBotDies(BeetleBot bot)
+        {
+            RemoveBeetBot(bot);
+            Occupy(bot.Coordinates, false);
+
+            if (AlphaBotsCount < bots.Count)
+            {
+                return;
+            }
+
+            var genomes = StopEpoch();
+
+            Epoch++;
+
+            StartEpoch(genomes);
+        }
+
         private IEnumerable<IGenome> StopEpoch()
         {
             var genomes = new List<IGenome>();
@@ -239,9 +300,6 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             return genomes;
         }
 
-        /// <summary>
-        /// 
-        /// </summary>
         private void StartEpoch(IEnumerable<IGenome> genomes)
         {
             const int mutations = 1;
@@ -249,8 +307,13 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             var positionProvider = new PositionProvider(obstacles, mapSize);
             var factory = new BeetleBotFactory(positionProvider, genomeProducer);
 
+            var list = new List<IGenome>(genomes);
+            DoEpochStarted(new EpochStartedEventArgs(Epoch,new ReadOnlyCollection<IGenome>(list)));
+
             foreach (var genome in genomes)
             {
+                Debug.WriteLine($"Genome: mutations: {genome.Mutations.Count}");
+
                 var alpha = factory.CreateBeetleBot(genome);
 
                 bots = bots.Add(alpha);
@@ -273,6 +336,8 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
                     Scene.Children.Add(child);
                 }   
             }
+
+            UpdateFoodAmount();
         }
 
         private void RemoveBeetBot(BeetleBot bot)
@@ -288,39 +353,46 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
             map[bot.Coordinates.X, bot.Coordinates.Y] &= CellType.AttributeMask;
         }
 
-        private void DoBeetleBotDies(BeetleBot bot)
+        private void UpdateFoodAmount()
         {
-            RemoveBeetBot(bot);
-
-            if (AlphaBotsCount < bots.Count)
+            if (FoodCount <= foodCount)
             {
                 return;
             }
 
-            var genomes = StopEpoch();
+            var positionProvider = new PositionProvider(obstacles, mapSize);
 
-            Epoch++;
+            while (FoodCount > foodCount)
+            {
+                var position = positionProvider.CreatePosition();
 
-            StartEpoch(genomes);
+                if (CellType.Free != (map[position.X, position.Y] & CellType.AttributeMask))
+                {
+                    continue;
+                }
+
+                map[position.X, position.Y] |= CellType.Food;
+                ++foodCount;
+            }
+
+            while (PoisonCount > poisonCount)
+            {
+                var position = positionProvider.CreatePosition();
+
+                if (CellType.Free != (map[position.X, position.Y] & CellType.AttributeMask))
+                {
+                    continue;
+                }
+
+                map[position.X, position.Y] |= CellType.Poison;
+                ++poisonCount;
+            }
         }
 
-        /*private void DoBeetleBotMoves(BeetleBot bot, Coordinates origin, Coordinates destination)
+        private void DoEpochStarted(EpochStartedEventArgs e)
         {
-            if (null != origin)
-            {
-                if (CellType.Occupied == cells[origin.X, origin.Y])
-                {
-                    cells[origin.X, origin.Y] = CellType.Free;
-                }
-            }
-
-            if (null == destination)
-            {
-                return;
-            }
-
-            cells[destination.X, destination.Y] = CellType.Occupied;
-        }*/
+            EpochStarted?.Invoke(this, e);
+        }
 
         private void OnPointerMoved(object sender, PointerRoutedEventArgs e)
         {
@@ -375,7 +447,12 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
             if (CellType.Free == value)
             {
-                map[coordinates.X, coordinates.Y] = forceFood ? CellType.Food : CellType.Wall;
+                map[coordinates.X, coordinates.Y] = forceFood ? CellType.Food : (CellType.Occupied | CellType.Wall);
+
+                if (forceFood)
+                {
+                    ++foodCount;
+                }
             }
             else
             {

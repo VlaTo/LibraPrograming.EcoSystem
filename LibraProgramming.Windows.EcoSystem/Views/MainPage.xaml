@@ -5,7 +5,8 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:mgc="using:Microsoft.Graphics.Canvas.UI.Xaml"
-    mc:Ignorable="d">
+    mc:Ignorable="d"
+    DataContext="{Binding Path=MainPageModel, Source={StaticResource ModelLocator}}">
     <Grid
         Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
         <ScrollViewer
@@ -23,5 +24,35 @@
                 Unloaded="OnCanvasAnimatedControlUnloaded"
             />
         </ScrollViewer>
+        <Grid
+            Background="{StaticResource ApplicationPageBackgroundThemeBrush}"
+            Opacity="0.5"
+            HorizontalAlignment="Stretch"
+            VerticalAlignment="Bottom">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock
+                Grid.Column="0"
+                Margin="24,8">
+                <Run Text="Epoch: " />
+                <Run Text="{Binding Path=Epoch}" />
+            </TextBlock>
+            <ListView
+                Grid.Column="1"
+                ItemsSource="{Binding Path=Mutations}">
+                <ListView.ItemTemplate>
+                    <DataTemplate>
+                        <TextBlock Text="{Binding }" />
+                    </DataTemplate>
+                </ListView.ItemTemplate>
+                <ListView.ItemsPanel>
+                    <ItemsPanelTemplate>
+                        <StackPanel Orientation="Horizontal" />
+                    </ItemsPanelTemplate>
+                </ListView.ItemsPanel>
+            </ListView>
+        </Grid>
     </Grid>
 </Page>

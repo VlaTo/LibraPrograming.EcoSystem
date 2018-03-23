@@ -57,10 +57,10 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
                 {
                     var coordinates = new Coordinates(x, y);
 
-                    if (false == Controller.IsOccupied(coordinates))
+                    /*if (false == Controller.IsOccupied(coordinates))
                     {
                         continue;
-                    }
+                    }*/
 
                     var brush = Colors.Transparent;
                     

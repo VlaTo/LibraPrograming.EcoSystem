@@ -200,7 +200,8 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
                     Ip += opcode;
                 }
 
-                return NodeState.Empty<BeetleBot>();
+                //return NodeState.Empty<BeetleBot>();
+                return Node.State;
             }
 
             private static MovingDirection GetDirection(byte opcode)
@@ -265,11 +266,11 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
                 private set;
             }
 
-            protected Vector2 Origin
+            /*protected Vector2 Origin
             {
                 get;
                 private set;
-            }
+            }*/
 
             protected Vector2 Destination
             {
@@ -297,6 +298,11 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
             public override void Update(TimeSpan elapsed)
             {
+                if (null == Node.Controller)
+                {
+                    return;
+                }
+
                 switch (Step)
                 {
                     // initiate
@@ -309,6 +315,7 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
                         if (Node.Coordinates != Coordinates && false == Node.Controller.IsOccupied(Coordinates))
                         {
                             Step++;
+                            Node.Controller.Occupy(Coordinates, true);
                         }
                         else
                         {
@@ -511,6 +518,11 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
             protected override void DoComplete()
             {
+                if (null == Node.Controller)
+                {
+                    return;
+                }
+
                 var eated = Node.Controller.Eat(Node.Coordinates, out var poisoned);
 
                 if (eated)
@@ -536,7 +548,12 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
         {
             public override void Update(TimeSpan elapsed)
             {
-                Node.Controller.Occupy(Node.Coordinates, false);
+                if (null == Node.Controller)
+                {
+                    return;
+                }
+
+                Node.Controller.DoBeetleBotDies(Node);
             }
         }
     }

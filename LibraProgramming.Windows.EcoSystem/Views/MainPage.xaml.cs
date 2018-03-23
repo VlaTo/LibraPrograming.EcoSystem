@@ -4,7 +4,9 @@ using Microsoft.Graphics.Canvas.UI;
 using Microsoft.Graphics.Canvas.UI.Xaml;
 using System;
 using System.Collections.Generic;
+using Windows.UI.Core;
 using Windows.UI.Xaml;
+using LibraProgramming.Windows.EcoSystem.ViewModels;
 
 namespace LibraProgramming.Windows.EcoSystem.Views
 {
@@ -21,6 +23,7 @@ namespace LibraProgramming.Windows.EcoSystem.Views
         {
             var obstacles = GetObstacles();
             controller = new EcoSystemController(sender as CanvasAnimatedControl, new MapSize(60, 40), obstacles);
+            controller.EpochStarted += OnEpochStarted;
             args.TrackAsyncAction(controller.InitializeAsync(args.Reason).AsAsyncAction());
         }
 
@@ -38,6 +41,26 @@ namespace LibraProgramming.Windows.EcoSystem.Views
         private void OnCanvasAnimatedControlUnloaded(object sender, RoutedEventArgs e)
         {
             controller.Shutdown();
+        }
+
+        private async void OnEpochStarted(object sender, EpochStartedEventArgs e)
+        {
+            await Dispatcher.RunAsync(
+                CoreDispatcherPriority.Normal,
+                () =>
+                {
+                    var model = (MainPageViewModel) DataContext;
+
+                    model.Epoch = e.Epoch + 1;
+
+                    model.Mutations.Clear();
+
+                    foreach (var genome in e.Genomes)
+                    {
+                        model.Mutations.Add(genome.Mutations.Count);
+                    }
+                }
+            );
         }
 
         private static IEnumerable<Coordinates> GetObstacles()
