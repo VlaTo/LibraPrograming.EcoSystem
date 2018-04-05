@@ -302,7 +302,7 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
 
         private void StartEpoch(IEnumerable<IGenome> genomes)
         {
-            const int mutations = 1;
+            /*const int mutations = 1;
 
             var positionProvider = new PositionProvider(obstacles, mapSize);
             var factory = new BeetleBotFactory(positionProvider, genomeProducer);
@@ -335,6 +335,28 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
                     bots = bots.Add(child);
                     Scene.Children.Add(child);
                 }   
+            }
+
+            UpdateFoodAmount();*/
+
+            const int mutations = 1;
+
+            var positionProvider = new PositionProvider(obstacles, mapSize);
+            var factory = new BeetleBotFactory(positionProvider, genomeProducer);
+
+            var list = new List<IGenome>(genomes);
+            DoEpochStarted(new EpochStartedEventArgs(Epoch,new ReadOnlyCollection<IGenome>(list)));
+
+            foreach (var genome in genomes)
+            {
+                Debug.WriteLine($"Genome: mutations: {genome.Mutations.Count}");
+
+                var alpha = factory.CreateBeetleBot(genome);
+
+                bots = bots.Add(alpha);
+                Scene.Children.Add(alpha);
+
+                break;
             }
 
             UpdateFoodAmount();

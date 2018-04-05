@@ -141,6 +141,8 @@
     <Compile Include="GameEngine\NodeState.cs" />
     <Compile Include="GameEngine\OpCodeGenerator.cs" />
     <Compile Include="GameEngine\Coordinates.cs" />
+    <Compile Include="GameEngine\RotateDirection.cs" />
+    <Compile Include="GameEngine\Rotation.cs" />
     <Compile Include="GameEngine\Scene.cs" />
     <Compile Include="GameEngine\SceneNode.Collection.cs" />
     <Compile Include="GameEngine\SceneNode.cs" />

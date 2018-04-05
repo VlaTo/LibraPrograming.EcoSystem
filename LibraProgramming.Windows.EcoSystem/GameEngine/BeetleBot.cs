@@ -328,20 +328,26 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
                     // calculate rotation direction
                     case 1:
                     {
-                        if (RotationEpsilon >= Math.Abs(Node.Angle - Angle))
+                        var distance = GameEngine.Rotation.Angle(Node.Angle, Angle, out var dir);
+
+                        if (RotationEpsilon >= distance)
                         {
                             Step = 3;
                             break;
                         }
-                        else if (Node.Angle > Angle)
+
+                        /*if (Node.Angle > Angle)
                         {
-                            Rotation = -RotationStep;
+                            //Rotation = -RotationStep;
+                            Rotation = (Math.PI > distance) ? -RotationStep : RotationStep;
                         }
                         else
                         {
-                            Rotation = RotationStep;
-                        }
-
+                            //Rotation = RotationStep;
+                            Rotation = (Math.PI > distance) ? -RotationStep : RotationStep;
+                        }*/
+                        
+                        Rotation = RotateDirection.CW == dir ? RotationStep : -RotationStep;
                         Step++;
 
                         break;
@@ -350,7 +356,7 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
                     // rotate
                     case 2:
                     {
-                        var angle = NormalizeAngle(Node.Angle + Rotation);
+                        var angle = GameEngine.Rotation.Normalize(Node.Angle + Rotation);
 
                         if (RotationEpsilon >= Math.Abs(Angle - angle))
                         {
@@ -500,10 +506,15 @@ namespace LibraProgramming.Windows.EcoSystem.GameEngine
                 }
             }
 
-            private static float NormalizeAngle(float angle)
+            /*private static float NormalizeAngle(float angle)
             {
+                if (0.0 > angle)
+                {
+                    return PI2 + angle;
+                }
+
                 return Convert.ToSingle(angle % PI2);
-            }
+            }*/
         }
 
         /// <summary>
